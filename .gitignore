@@ -1,0 +1,19 @@
+node_modules/
+gen/
+coverage/
+@cds-models/
+
+# local configuration and secrets
+.env
+.env.*
+!.env.example
+default-env.json
+.cdsrc-private.json
+
+# local databases
+*.sqlite
+*.db
+
+# OS / editor
+.DS_Store
+.vscode/

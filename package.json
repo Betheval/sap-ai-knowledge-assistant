@@ -1,0 +1,133 @@
+{
+  "name": "sap-ai-knowledge-assistant",
+  "version": "0.1.0",
+  "description": "RAG assistant that answers SAP CAP development questions from the Capire documentation, with cited sources.",
+  "license": "Apache-2.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typer": "cds-typer \"*\" --outputDirectory @cds-models",
+    "postinstall": "npm run typer",
+    "watch": "npm run typer && cds-tsx watch --profile development,pg",
+    "watch:fake": "npm run typer && cds-tsx watch --profile development,fake-ai",
+    "db:deploy": "cds deploy --profile development,pg && tsx scripts/apply-retrieval-schema.ts",
+    "test": "npm run typer && jest",
+    "typecheck": "npm run typer && tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "imports": {
+    "#cds-models/*": "./@cds-models/*/index.js"
+  },
+  "dependencies": {
+    "@cap-js/postgres": "^3.1.2",
+    "@cap-js/sqlite": "^3.1.2",
+    "@sap/cds": "^10.1.1"
+  },
+  "devDependencies": {
+    "@cap-js/cds-test": "^1.0.2",
+    "@cap-js/cds-typer": "^0.41.1",
+    "@cap-js/cds-types": "^0.20.0",
+    "@eslint/js": "^10",
+    "@sap/cds-dk": "^10.1.0",
+    "@sap/eslint-plugin-cds": "^4.2.5",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24",
+    "eslint": "^10.13.0",
+    "jest": "^30.5.2",
+    "prettier": "^3.9.10",
+    "ts-jest": "^29.4.15",
+    "tsx": "^4",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2"
+  },
+  "cds": {
+    "requires": {
+      "kinds": {
+        "ollama-llm": {
+          "impl": "srv/lib/adapters/ollama/ollama-llm-service"
+        },
+        "fake-llm": {
+          "impl": "srv/lib/adapters/fake/fake-llm-service"
+        },
+        "fake-retriever": {
+          "impl": "srv/lib/adapters/fake/fake-retriever-service"
+        }
+      },
+      "llm": {
+        "kind": "ollama-llm",
+        "chatModel": "qwen2.5:7b",
+        "numCtx": 16384,
+        "maxOutputTokens": 1024,
+        "temperature": 0.2,
+        "timeoutMs": 120000
+      },
+      "retriever": {
+        "kind": "fake-retriever",
+        "minScore": 0.2
+      },
+      "[development]": {
+        "auth": {
+          "kind": "mocked",
+          "users": {
+            "alice": {
+              "password": "alice",
+              "roles": [
+                "KnowledgeUser"
+              ]
+            },
+            "bob": {
+              "password": "bob",
+              "roles": [
+                "KnowledgeUser"
+              ]
+            }
+          }
+        }
+      },
+      "[pg]": {
+        "db": {
+          "kind": "postgres",
+          "credentials": {
+            "database": "knowledge",
+            "user": "knowledge_app"
+          }
+        }
+      },
+      "[fake-ai]": {
+        "llm": {
+          "kind": "fake-llm"
+        }
+      },
+      "[test]": {
+        "llm": {
+          "kind": "fake-llm"
+        },
+        "auth": {
+          "kind": "mocked",
+          "users": {
+            "alice": {
+              "password": "alice",
+              "roles": [
+                "KnowledgeUser"
+              ]
+            },
+            "bob": {
+              "password": "bob",
+              "roles": [
+                "KnowledgeUser"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "rag": {
+      "topK": 6,
+      "historyMessages": 6
+    }
+  }
+}

@@ -1,0 +1,38 @@
+import type { ChatMessage } from '../ports/llm'
+import type { RetrievedChunk } from '../ports/retriever'
+
+export const NO_ANSWER =
+  "I couldn't find this in the CAP documentation (Capire). " +
+  'Try rephrasing the question or asking about a more specific CAP topic.'
+
+export const REWRITE_SYSTEM_PROMPT = `You rewrite follow-up questions about SAP CAP into standalone search queries.
+Use the conversation to resolve references such as "it", "that" or "the same".
+Return only the rewritten query, on a single line, without quotes or explanations.`
+
+export const ANSWER_SYSTEM_PROMPT = `You are an assistant for SAP Cloud Application Programming Model (CAP) developers.
+Answer using ONLY the numbered documentation excerpts provided in the user's message.
+Rules:
+- Put the citation right after the sentence it supports, e.g. "... in req.data [1]." or "... [2][3]." Never collect citations at the end.
+- Do not add facts, definitions or acronym expansions that are not stated in the excerpts, even if you believe them to be true.
+- If the excerpts do not contain the answer, say that the documentation provided does not cover it. Never invent APIs, annotations or configuration.
+- Include short code examples when the excerpts contain them.
+- Be concise and technical.`
+
+/** Marker the answer prompt starts with; also lets the fake LLM tell the two steps apart. */
+export const CONTEXT_HEADER = 'Documentation excerpts:'
+
+export function buildRewriteMessages(history: ChatMessage[], question: string): ChatMessage[] {
+  const transcript = history.map((m) => `${m.role}: ${m.content}`).join('\n')
+  return [
+    { role: 'system', content: REWRITE_SYSTEM_PROMPT },
+    { role: 'user', content: `Conversation:\n${transcript}\n\nFollow-up question: ${question}` },
+  ]
+}
+
+export function formatChunk(chunk: RetrievedChunk, index: number): string {
+  return `[${index + 1}] ${chunk.title}\n${chunk.content}`
+}
+
+export function buildAnswerUserMessage(chunks: RetrievedChunk[], question: string): string {
+  return `${CONTEXT_HEADER}\n\n${chunks.map(formatChunk).join('\n\n')}\n\nQuestion: ${question}`
+}
