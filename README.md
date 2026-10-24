@@ -58,6 +58,7 @@ For the real setup you need, on a machine you can reach:
 ```bash
 cp .env.example .env    # Ollama URL, database host and password
 npm run db:deploy       # CDS schema + retrieval columns and indexes
+npm run ingest          # download Capire, chunk, embed and store (add -- --dry-run to review first)
 npm run watch
 ```
 
@@ -88,6 +89,7 @@ available at `/odata/v4/knowledge/Conversations?$expand=messages($expand=sources
 | `npm run watch`      | Development server: Ollama and PostgreSQL    |
 | `npm run watch:fake` | Development server: fake LLM, SQLite         |
 | `npm run db:deploy`  | Deploy the schema to PostgreSQL              |
+| `npm run ingest`     | Ingest Capire into the knowledge base        |
 | `npm test`           | Unit and service tests (no network required) |
 | `npm run typecheck`  | TypeScript type check                        |
 | `npm run lint`       | ESLint (TypeScript and CDS)                  |

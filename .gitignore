@@ -1,6 +1,7 @@
 node_modules/
 gen/
 coverage/
+.cache/
 @cds-models/
 
 # local configuration and secrets

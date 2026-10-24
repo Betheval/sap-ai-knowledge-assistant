@@ -2,16 +2,14 @@
  * Applies db/postgres/retrieval-schema.sql to the PostgreSQL database of the
  * `pg` profile. Runs after `cds deploy` (npm run db:deploy).
  */
+import './pg-profile'
+import cds from '@sap/cds'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const SQL_FILE = path.join(__dirname, '..', 'db', 'postgres', 'retrieval-schema.sql')
 
 async function main() {
-  // Select the profile before CAP reads its configuration
-  process.env.CDS_ENV ??= 'development,pg'
-  const { default: cds } = await import('@sap/cds')
-
   const db = await cds.connect.to('db')
   if (db.kind !== 'postgres') throw new Error(`Expected a PostgreSQL database, got '${db.kind}'`)
 

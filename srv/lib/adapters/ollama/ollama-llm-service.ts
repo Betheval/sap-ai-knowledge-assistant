@@ -1,6 +1,6 @@
 import cds from '@sap/cds'
-import { LLMTimeoutError, LLMUnavailableError } from '../../errors'
 import type { ChatMessage, ChatResult, HealthStatus, LLMProvider } from '../../ports/llm'
+import { ollamaBaseUrl, ollamaRequest } from './ollama-client'
 
 const LOG = cds.log('ollama')
 const HEALTH_TIMEOUT_MS = 5000
@@ -43,7 +43,7 @@ export default class OllamaLLMService extends cds.Service implements LLMProvider
 
   async init() {
     const env = process.env
-    this.baseUrl = (env.OLLAMA_BASE_URL ?? this.options.url)?.replace(/\/+$/, '')
+    this.baseUrl = ollamaBaseUrl(this.options.url)
     this.chatModel = env.OLLAMA_CHAT_MODEL ?? this.options.chatModel
     this.contextWindow = Number(env.OLLAMA_NUM_CTX ?? this.options.numCtx)
     this.timeoutMs = Number(env.OLLAMA_TIMEOUT_MS ?? this.options.timeoutMs)
@@ -106,26 +106,7 @@ export default class OllamaLLMService extends cds.Service implements LLMProvider
     }
   }
 
-  private async request<T>(path: string, timeoutMs: number, init: RequestInit = {}): Promise<T> {
-    if (!this.baseUrl) throw new LLMUnavailableError('The Ollama host is not configured (OLLAMA_BASE_URL)')
-
-    try {
-      const response = await fetch(this.baseUrl + path, {
-        ...init,
-        headers: { 'content-type': 'application/json' },
-        signal: AbortSignal.timeout(timeoutMs),
-      })
-      if (!response.ok) {
-        const detail = await response.text().catch(() => '')
-        throw new LLMUnavailableError(`Ollama returned HTTP ${response.status}: ${detail}`)
-      }
-      return (await response.json()) as T
-    } catch (error) {
-      if (error instanceof LLMUnavailableError) throw error
-      if ((error as Error).name === 'TimeoutError') {
-        throw new LLMTimeoutError(`Ollama did not answer within ${timeoutMs} ms`, { cause: error })
-      }
-      throw new LLMUnavailableError(`The Ollama host ${this.baseUrl} is unreachable`, { cause: error })
-    }
+  private request<T>(path: string, timeoutMs: number, init?: RequestInit): Promise<T> {
+    return ollamaRequest<T>(this.baseUrl, path, timeoutMs, init)
   }
 }

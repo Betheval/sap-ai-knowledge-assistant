@@ -13,6 +13,7 @@
     "watch": "npm run typer && cds-tsx watch --profile development,pg",
     "watch:fake": "npm run typer && cds-tsx watch --profile development,fake-ai",
     "db:deploy": "cds deploy --profile development,pg && tsx scripts/apply-retrieval-schema.ts",
+    "ingest": "tsx scripts/ingest.ts",
     "test": "npm run typer && jest",
     "typecheck": "npm run typer && tsc --noEmit",
     "lint": "eslint .",
@@ -55,6 +56,9 @@
         },
         "fake-retriever": {
           "impl": "srv/lib/adapters/fake/fake-retriever-service"
+        },
+        "ollama-embeddings": {
+          "impl": "srv/lib/adapters/ollama/ollama-embedding-service"
         }
       },
       "llm": {
@@ -63,6 +67,13 @@
         "numCtx": 16384,
         "maxOutputTokens": 1024,
         "temperature": 0.2,
+        "timeoutMs": 120000
+      },
+      "embeddings": {
+        "kind": "ollama-embeddings",
+        "embeddingModel": "bge-m3",
+        "dimensions": 1024,
+        "numCtx": 8192,
         "timeoutMs": 120000
       },
       "retriever": {
@@ -128,6 +139,25 @@
     "rag": {
       "topK": 6,
       "historyMessages": 6
+    },
+    "ingestion": {
+      "capire": {
+        "repo": "cap-js/docs",
+        "commit": "233700907188d1408a284a60114d93e7ae656e9a",
+        "folders": [
+          "get-started",
+          "guides",
+          "cds",
+          "node.js",
+          "java",
+          "tools",
+          "plugins"
+        ],
+        "baseUrl": "https://cap.cloud.sap/docs"
+      },
+      "maxChunkTokens": 800,
+      "maxDatabaseBytes": 5368709120,
+      "batchSize": 16
     }
   }
 }

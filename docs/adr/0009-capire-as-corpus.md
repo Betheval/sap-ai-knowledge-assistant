@@ -31,12 +31,32 @@ legally allowed to process and quote.
 
 **Processing**
 
-- Markdown is split by headings (H2/H3) into chunks of roughly 300–800 tokens.
-  Code blocks are never split.
+- Pages come from `get-started`, `guides`, `cds`, `node.js`, `java`, `tools`
+  and `plugins`. Partials (`_*.md`, `assets/`) are only used through the
+  `@include` directives that pull them into pages, and the files Capire excludes
+  from its site (`srcExclude`) are skipped.
+- Only pages that are **live on the published site** are ingested: the
+  repository can be ahead of the deployment (5 pages returned 404 at the pinned
+  commit), and an answer must never cite a broken link.
+- VitePress-specific syntax is normalized before chunking, outside code blocks
+  only: front matter (its `description` replaces `{{ $frontmatter.description }}`),
+  `:::` containers and GitHub alerts become labels such as "**Tip:**", links
+  become their text, HTML, Vue components, SVG, `[[toc]]` and "Learn more" links
+  are removed, `<Config>` snippets become inline code, Node.js/Java variants are
+  labeled, and table padding is compacted. Inside code, only `[!code ...]`
+  annotations are removed (lines marked `--` are dropped).
+- Pages are split by H2/H3 sections into chunks of at most ~800 tokens. Code
+  blocks are never split (13 chunks exceed the limit because of a single code
+  block, all far below the 8192-token input of bge-m3); large tables are split by
+  rows, repeating the header. Near-empty chunks are dropped.
 - Each chunk keeps its heading breadcrumb (for example
-  `Providing Services › Actions`), source path and public URL.
-- VitePress-specific syntax (`::: tip`, code groups, custom components) is
-  normalized to plain Markdown before chunking.
+  `Custom Actions and Functions › Implementing Actions`) and the public URL of
+  its section. Anchors use Capire's own slugifier (GitHub style, from its
+  VitePress configuration) and custom `{#id}` anchors; 2,625 of 2,628 generated
+  anchors were verified against the live site.
+- Result at the pinned commit: 206 pages, ~2,950 chunks, median ~170 tokens.
+- `npm run ingest -- --dry-run` writes a review report to `.cache/` without
+  embedding or storing anything.
 
 ## Consequences
 

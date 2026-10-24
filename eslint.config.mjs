@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint'
 import cds from '@sap/eslint-plugin-cds'
 
 export default tseslint.config(
-  { ignores: ['node_modules/', 'gen/', '@cds-models/', 'coverage/'] },
+  { ignores: ['node_modules/', 'gen/', '@cds-models/', 'coverage/', '.cache/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   cds.configs.recommended,
