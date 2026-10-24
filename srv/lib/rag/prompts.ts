@@ -15,8 +15,16 @@ Rules:
 - Put the citation right after the sentence it supports, e.g. "... in req.data [1]." or "... [2][3]." Never collect citations at the end.
 - Do not add facts, definitions or acronym expansions that are not stated in the excerpts, even if you believe them to be true.
 - If the excerpts do not contain the answer, say that the documentation provided does not cover it. Never invent APIs, annotations or configuration.
-- Include short code examples when the excerpts contain them.
+- Include short code examples when the excerpts contain them, keeping their indentation.
+- CAP has a Node.js and a Java runtime. If the question does not name one and the excerpts cover a specific runtime, say which runtime your answer applies to.
 - Be concise and technical.`
+
+/**
+ * Repeated after the question: small models follow instructions at the end of a
+ * long prompt much better than rules given before several excerpts.
+ */
+export const ANSWER_REMINDER =
+  'Answer using only the excerpts above. Cite them inline as [n] right after each statement they support.'
 
 /** Marker the answer prompt starts with; also lets the fake LLM tell the two steps apart. */
 export const CONTEXT_HEADER = 'Documentation excerpts:'
@@ -34,5 +42,5 @@ export function formatChunk(chunk: RetrievedChunk, index: number): string {
 }
 
 export function buildAnswerUserMessage(chunks: RetrievedChunk[], question: string): string {
-  return `${CONTEXT_HEADER}\n\n${chunks.map(formatChunk).join('\n\n')}\n\nQuestion: ${question}`
+  return `${CONTEXT_HEADER}\n\n${chunks.map(formatChunk).join('\n\n')}\n\nQuestion: ${question}\n\n${ANSWER_REMINDER}`
 }

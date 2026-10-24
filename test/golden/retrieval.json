@@ -1,0 +1,134 @@
+{
+  "description": "Golden set for retrieval quality (ADR 0013). A question is answered at rank n when the n-th retrieved chunk belongs to one of its expected Capire pages. Negatives are questions the documentation does not cover; the retriever should abstain.",
+  "questions": [
+    {
+      "id": "action",
+      "question": "How do I implement an action in CAP?",
+      "expected": ["guides/services/custom-actions.md", "guides/services/custom-code.md"]
+    },
+    {
+      "id": "xsuaa",
+      "question": "How do I configure XSUAA authentication?",
+      "expected": ["guides/security/authentication.md", "node.js/authentication.md"]
+    },
+    {
+      "id": "deploy-cf",
+      "question": "How do I deploy a CAP application to Cloud Foundry?",
+      "expected": ["guides/deploy/to-cf.md"]
+    },
+    {
+      "id": "own-records",
+      "question": "How can I restrict access so that users only see their own records?",
+      "expected": ["guides/security/authorization.md"]
+    },
+    {
+      "id": "mock-users",
+      "question": "How do I define mock users with roles for local development?",
+      "expected": [
+        "guides/security/authentication.md",
+        "node.js/authentication.md",
+        "guides/security/cap-users.md"
+      ]
+    },
+    {
+      "id": "initial-data",
+      "question": "How do I add initial data to my database from CSV files?",
+      "expected": ["guides/databases/initial-data.md"]
+    },
+    {
+      "id": "postgres",
+      "question": "How do I use PostgreSQL as the database of my CAP application?",
+      "expected": ["guides/databases/postgres.md"]
+    },
+    {
+      "id": "select-where",
+      "question": "How do I write a SELECT query with a where clause in Node.js?",
+      "expected": ["node.js/cds-ql.md"]
+    },
+    {
+      "id": "emit-events",
+      "question": "How do I emit and subscribe to events between services?",
+      "expected": [
+        "guides/events/core-concepts.md",
+        "guides/events/messaging.md",
+        "node.js/messaging.md",
+        "node.js/core-services.md",
+        "node.js/events.md"
+      ]
+    },
+    {
+      "id": "draft",
+      "question": "How do I enable draft support for a Fiori Elements application?",
+      "expected": ["guides/uis/fiori.md", "node.js/fiori.md", "java/fiori-drafts.md"]
+    },
+    {
+      "id": "i18n",
+      "question": "How do I provide translated texts for UI labels?",
+      "expected": ["guides/uis/i18n.md", "node.js/cds-i18n.md"]
+    },
+    {
+      "id": "localized-data",
+      "question": "How do I store localized data, for example book titles in several languages?",
+      "expected": ["guides/uis/localized-data.md"]
+    },
+    {
+      "id": "remote-odata",
+      "question": "How do I consume a remote OData service and import its API?",
+      "expected": [
+        "guides/services/consuming-services.md",
+        "node.js/remote-services.md",
+        "tools/apis/cds-import.md"
+      ]
+    },
+    {
+      "id": "cuid-managed",
+      "question": "What do the cuid and managed aspects add to an entity?",
+      "expected": ["cds/common.md"]
+    },
+    {
+      "id": "typescript-types",
+      "question": "How do I generate TypeScript types from my CDS model?",
+      "expected": ["tools/cds-typer.md", "node.js/typescript.md"]
+    },
+    {
+      "id": "cds-test",
+      "question": "How do I write automated tests for my service with cds.test?",
+      "expected": ["node.js/cds-test.md"]
+    },
+    {
+      "id": "logging",
+      "question": "How do I write log messages and configure log levels in Node.js?",
+      "expected": ["node.js/cds-log.md"]
+    },
+    {
+      "id": "multitenancy",
+      "question": "How do I build a multitenant SaaS application?",
+      "expected": ["guides/multitenancy/index.md", "guides/multitenancy/mtxs.md"]
+    },
+    {
+      "id": "java-handler",
+      "question": "How do I register an event handler in CAP Java?",
+      "expected": ["java/event-handlers/index.md"]
+    },
+    {
+      "id": "schema-evolution",
+      "question": "What happens to existing tables when my data model changes?",
+      "expected": ["guides/databases/schema-evolution.md"]
+    },
+    {
+      "id": "hybrid-testing",
+      "question": "How do I bind my local app to cloud services for hybrid testing?",
+      "expected": ["tools/cds-bind.md"]
+    },
+    {
+      "id": "kyma",
+      "question": "How do I deploy a CAP application to Kyma?",
+      "expected": ["guides/deploy/to-kyma.md"]
+    }
+  ],
+  "negatives": [
+    { "id": "capital", "question": "What is the capital of France?" },
+    { "id": "bread", "question": "How do I bake sourdough bread at home?" },
+    { "id": "football", "question": "Who won the 2018 FIFA World Cup?" }
+  ]
+}

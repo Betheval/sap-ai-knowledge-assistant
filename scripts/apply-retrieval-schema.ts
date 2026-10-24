@@ -4,23 +4,15 @@
  */
 import './pg-profile'
 import cds from '@sap/cds'
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
-
-const SQL_FILE = path.join(__dirname, '..', 'db', 'postgres', 'retrieval-schema.sql')
+import { applyRetrievalSchema, RETRIEVAL_SCHEMA_FILE } from '../srv/lib/adapters/postgres/retrieval-schema'
 
 async function main() {
   const db = await cds.connect.to('db')
   if (db.kind !== 'postgres') throw new Error(`Expected a PostgreSQL database, got '${db.kind}'`)
 
-  const statements = readFileSync(SQL_FILE, 'utf8')
-    .replace(/^\s*--.*$/gm, '')
-    .split(/;\s*$/m)
-    .map((s) => s.trim())
-    .filter(Boolean)
-
-  for (const statement of statements) await db.run(statement)
-  console.log(`Applied ${statements.length} statements from ${path.relative(process.cwd(), SQL_FILE)}`)
+  const count = await applyRetrievalSchema(db)
+  console.log(`Applied ${count} statements from ${path.relative(process.cwd(), RETRIEVAL_SCHEMA_FILE)}`)
   cds.exit()
 }
 

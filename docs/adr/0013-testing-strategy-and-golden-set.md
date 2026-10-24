@@ -22,11 +22,15 @@ From phase 1:
 
 From phase 2:
 
-- **Golden set:** a versioned file (`test/golden/questions.yaml`) with 15–20
-  representative questions (including multi-turn follow-ups), each with the Capire pages
-  expected among the sources.
-- An evaluation script reports retrieval metrics (hit rate@k, MRR) and stores the
-  results, so every retrieval change can be compared with the previous baseline.
+- **Golden set:** `test/golden/retrieval.json`, with 22 standalone questions,
+  each with the Capire pages that answer it, plus questions the documentation
+  does not cover, for abstention. Follow-up questions are covered by the unit
+  tests of query rewriting; the retrieval set uses standalone questions so its
+  results do not depend on the LLM.
+- `npm run eval:retrieval` reports hit@1/3/6 and MRR@6 for semantic, lexical and
+  hybrid search, and the similarity margin between covered and uncovered
+  questions. `--save` stores the results in `test/golden/retrieval-baseline.json`,
+  so every retrieval change can be compared with the previous baseline.
 - Integration tests for the PostgreSQL retriever against the `knowledge_test`
   database ([ADR 0011](0011-persistence-sqlite-then-postgres.md)). They are skipped
   when no test database is configured, so `npm test` stays runnable anywhere;

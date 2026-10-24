@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-24",
+  "corpusCommit": "233700907188d1408a284a60114d93e7ae656e9a",
+  "config": {
+    "impl": "srv/lib/adapters/postgres/hybrid-retriever-service",
+    "kind": "hybrid-pg-retriever",
+    "minScore": 0.2,
+    "candidates": 30,
+    "rrfK": 60,
+    "minSimilarity": 0.5,
+    "stopwords": ["cap"]
+  },
+  "depth": 6,
+  "results": {
+    "semantic": {
+      "hitAt1": 0.8181818181818182,
+      "hitAt3": 0.9090909090909091,
+      "hitAt6": 0.9545454545454546,
+      "mrr": 0.8598484848484849,
+      "misses": ["action"]
+    },
+    "lexical": {
+      "hitAt1": 0.7272727272727273,
+      "hitAt3": 0.8636363636363636,
+      "hitAt6": 0.9090909090909091,
+      "mrr": 0.796969696969697,
+      "misses": ["i18n", "schema-evolution"]
+    },
+    "hybrid": {
+      "hitAt1": 0.8181818181818182,
+      "hitAt3": 0.9545454545454546,
+      "hitAt6": 1,
+      "mrr": 0.8977272727272727,
+      "misses": []
+    },
+    "abstention": {
+      "minSimilarity": 0.5,
+      "minPositive": 0.58292808125689,
+      "maxNegative": 0.3956882593446277
+    }
+  }
+}

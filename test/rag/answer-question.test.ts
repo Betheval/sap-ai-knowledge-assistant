@@ -1,7 +1,12 @@
 import type { ChatMessage, LLMProvider } from '../../srv/lib/ports/llm'
 import type { RetrievedChunk, Retriever } from '../../srv/lib/ports/retriever'
 import { answerQuestion } from '../../srv/lib/rag/answer-question'
-import { ANSWER_SYSTEM_PROMPT, NO_ANSWER, REWRITE_SYSTEM_PROMPT } from '../../srv/lib/rag/prompts'
+import {
+  ANSWER_REMINDER,
+  ANSWER_SYSTEM_PROMPT,
+  NO_ANSWER,
+  REWRITE_SYSTEM_PROMPT,
+} from '../../srv/lib/rag/prompts'
 
 function chunk(id: string, content = `Content of ${id}`): RetrievedChunk {
   return { id, title: `Title ${id}`, url: `https://example.org/${id}`, content, score: 1 }
@@ -54,7 +59,7 @@ describe('answerQuestion', () => {
     expect(messages[0]).toEqual({ role: 'system', content: ANSWER_SYSTEM_PROMPT })
     expect(messages.at(-1)?.content).toContain('[1] Title a')
     expect(messages.at(-1)?.content).toContain('[2] Title b')
-    expect(messages.at(-1)?.content).toMatch(/Question: Q$/)
+    expect(messages.at(-1)?.content).toContain(`Question: Q\n\n${ANSWER_REMINDER}`)
   })
 
   it('rewrites follow-up questions and retrieves with the rewritten query', async () => {
@@ -147,7 +152,7 @@ describe('answerQuestion', () => {
       expect(result.sources.map((s) => s.id)).toEqual(['big', 'small'])
       const messages: ChatMessage[] = llm.chat.mock.calls[0][0]
       expect(messages[0]?.content).toBe(ANSWER_SYSTEM_PROMPT)
-      expect(messages.at(-1)?.content).toMatch(/Question: Q$/)
+      expect(messages.at(-1)?.content).toContain(`Question: Q\n\n${ANSWER_REMINDER}`)
     })
 
     it('trims history from the oldest message first', async () => {
