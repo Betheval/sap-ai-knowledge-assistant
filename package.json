@@ -7,6 +7,9 @@
   "engines": {
     "node": ">=22"
   },
+  "workspaces": [
+    "app/*"
+  ],
   "scripts": {
     "typer": "cds-typer \"*\" --outputDirectory @cds-models",
     "postinstall": "npm run typer",
@@ -16,7 +19,7 @@
     "ingest": "tsx scripts/ingest.ts",
     "eval:retrieval": "tsx scripts/evaluate-retrieval.ts",
     "test": "npm run typer && jest",
-    "typecheck": "npm run typer && tsc --noEmit",
+    "typecheck": "npm run typer && tsc --noEmit && tsc --noEmit -p app/assistant",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -38,6 +41,7 @@
     "@sap/eslint-plugin-cds": "^4.2.5",
     "@types/jest": "^30.0.0",
     "@types/node": "^24",
+    "cds-plugin-ui5": "^0.17.4",
     "eslint": "^10.13.0",
     "jest": "^30.5.2",
     "prettier": "^3.9.10",

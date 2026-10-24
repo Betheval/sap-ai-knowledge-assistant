@@ -1,0 +1,152 @@
+<mvc:View
+  controllerName="knowledge.assistant.controller.App"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:core="sap.ui.core"
+  xmlns="sap.m"
+  displayBlock="true"
+  height="100%"
+>
+  <SplitApp id="splitApp" initialMaster="master" initialDetail="chat">
+    <masterPages>
+      <Page id="master" title="{i18n>conversationsTitle}">
+        <headerContent>
+          <Button
+            id="newConversationButton"
+            icon="sap-icon://add"
+            tooltip="{i18n>newConversation}"
+            press=".onNewConversation"
+          />
+        </headerContent>
+        <List
+          id="conversationList"
+          mode="SingleSelectMaster"
+          noDataText="{i18n>noConversations}"
+          selectionChange=".onConversationSelect"
+          items="{
+            path: '/Conversations',
+            sorter: { path: 'createdAt', descending: true },
+            parameters: { $select: 'ID,title,createdAt' }
+          }"
+        >
+          <StandardListItem
+            title="{title}"
+            description="{createdAt}"
+            type="Active"
+          />
+        </List>
+      </Page>
+    </masterPages>
+
+    <detailPages>
+      <Page
+        id="chat"
+        title="{i18n>chatTitle}"
+        enableScrolling="false"
+        showNavButton="{device>/system/phone}"
+        navButtonPress=".onNavBack"
+      >
+        <FlexBox direction="Column" height="100%" renderType="Bare">
+          <MessageStrip
+            text="{i18n>llmDown}"
+            type="Warning"
+            showIcon="true"
+            visible="{chat>/llmDown}"
+            class="sapUiSmallMargin"
+          />
+
+          <ScrollContainer id="messageScroller" vertical="true" height="100%" class="chatScroller">
+            <layoutData>
+              <FlexItemData growFactor="1" baseSize="0" />
+            </layoutData>
+
+            <VBox class="chatWelcome sapUiMediumMargin" visible="{= ${chat>/messages}.length === 0 }">
+              <Title text="{i18n>welcomeTitle}" level="H2" titleStyle="H3" />
+              <Text text="{i18n>welcomeText}" class="sapUiSmallMarginTopBottom" />
+              <Link text="{i18n>exampleAction}" press=".onExample" />
+              <Link text="{i18n>exampleXsuaa}" press=".onExample" />
+              <Link text="{i18n>exampleDeploy}" press=".onExample" />
+            </VBox>
+
+            <List
+              id="messageList"
+              items="{chat>/messages}"
+              showSeparators="None"
+              visible="{= ${chat>/messages}.length > 0 }"
+              class="chatMessages"
+            >
+              <!-- CSS classes cannot be bound; the role is written to the DOM as data-role instead -->
+              <CustomListItem class="chatItem">
+                <customData>
+                  <core:CustomData key="role" value="{chat>role}" writeToDom="true" />
+                </customData>
+                <VBox class="chatBubble">
+                  <Label text="{= ${chat>role} === 'user' ? ${i18n>you} : ${i18n>assistant} }" design="Bold" />
+
+                  <Text text="{chat>text}" visible="{= ${chat>role} === 'user' }" renderWhitespace="true" />
+
+                  <FormattedText
+                    htmlText="{chat>html}"
+                    visible="{= ${chat>role} === 'assistant' &amp;&amp; !${chat>pending} &amp;&amp; !${chat>error} }"
+                    class="chatAnswer"
+                  />
+
+                  <HBox alignItems="Center" visible="{= !!${chat>pending} }" class="sapUiTinyMarginTop">
+                    <BusyIndicator size="1rem" class="sapUiTinyMarginEnd" />
+                    <Text text="{ path: 'chat>/elapsed', formatter: '.formatThinking' }" />
+                  </HBox>
+
+                  <VBox visible="{= !!${chat>error} }" class="sapUiTinyMarginTop">
+                    <MessageStrip text="{chat>error/text}" type="Error" showIcon="true" />
+                    <Button
+                      text="{i18n>retry}"
+                      icon="sap-icon://refresh"
+                      visible="{= !!${chat>error/retryable} }"
+                      press=".onRetry"
+                      class="sapUiTinyMarginTop"
+                    />
+                  </VBox>
+
+                  <Panel
+                    expandable="true"
+                    expanded="false"
+                    headerText="{= ${i18n>sources} + ' (' + (${chat>sources} ? ${chat>sources}.length : 0) + ')' }"
+                    visible="{= !!${chat>sources} &amp;&amp; ${chat>sources}.length > 0 }"
+                    class="chatSources sapUiTinyMarginTop"
+                  >
+                    <List items="{ path: 'chat>sources', templateShareable: false }" showSeparators="None">
+                      <CustomListItem>
+                        <HBox alignItems="Center" class="sapUiTinyMarginBottom">
+                          <Link text="{chat>title}" href="{chat>url}" target="_blank" wrapping="true" />
+                          <ObjectStatus
+                            text="{i18n>cited}"
+                            state="Success"
+                            visible="{chat>cited}"
+                            class="sapUiTinyMarginBegin"
+                          />
+                        </HBox>
+                      </CustomListItem>
+                    </List>
+                  </Panel>
+                </VBox>
+              </CustomListItem>
+            </List>
+          </ScrollContainer>
+
+          <VBox class="chatComposer">
+            <FeedInput
+              id="questionInput"
+              placeholder="{i18n>questionPlaceholder}"
+              showIcon="false"
+              enabled="{= !${chat>/busy} }"
+              growing="true"
+              growingMaxLines="6"
+              maxLength="2000"
+              post=".onPost"
+            />
+            <Text text="{i18n>disclaimer}" class="chatDisclaimer" />
+          </VBox>
+        </FlexBox>
+      </Page>
+    </detailPages>
+  </SplitApp>
+</mvc:View>

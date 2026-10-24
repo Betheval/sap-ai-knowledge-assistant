@@ -1,0 +1,80 @@
+/* Chat layout (ADR 0015). Colors come from the UI5 theme parameters, so light and dark themes work. */
+
+.chatScroller {
+  background: var(--sapBackgroundColor);
+}
+
+.chatMessages {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+}
+
+.chatMessages .sapMLIB {
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+}
+
+.chatItem[data-role='user'] > .sapMLIBContent {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chatBubble {
+  max-width: 85%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+}
+
+.chatItem[data-role='user'] .chatBubble {
+  background: var(--sapList_SelectionBackgroundColor);
+}
+
+.chatItem[data-role='assistant'] .chatBubble {
+  background: var(--sapGroup_ContentBackground);
+  border: 1px solid var(--sapGroup_ContentBorderColor);
+}
+
+.chatAnswer p {
+  margin: 0.5rem 0;
+}
+
+.chatAnswer pre {
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  border-radius: 0.375rem;
+  background: var(--sapShell_Background);
+  font-family: var(--sapFontFamilyMonospace, monospace);
+  font-size: 0.8125rem;
+  white-space: pre;
+}
+
+.chatAnswer code {
+  font-family: var(--sapFontFamilyMonospace, monospace);
+}
+
+.chatAnswer a {
+  color: var(--sapLinkColor);
+  font-size: 0.75rem;
+  vertical-align: super;
+  text-decoration: none;
+}
+
+.chatSources .sapMPanelContent {
+  padding: 0.5rem 0.75rem;
+}
+
+.chatComposer {
+  max-width: 56rem;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0.5rem 1rem 0.75rem;
+}
+
+.chatDisclaimer {
+  margin-top: 0.25rem;
+  color: var(--sapContent_LabelColor);
+  font-size: var(--sapFontSmallSize);
+}

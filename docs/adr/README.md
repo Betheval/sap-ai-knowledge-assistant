@@ -19,3 +19,4 @@ New records start from [template.md](template.md).
 | 0012 | [Mocked authentication now, XSUAA in phase 4](0012-mocked-auth-now-xsuaa-later.md)                           | Accepted |
 | 0013 | [Testing strategy and RAG golden set](0013-testing-strategy-and-golden-set.md)                               | Accepted |
 | 0014 | [Project conventions](0014-project-conventions.md)                                                           | Accepted |
+| 0015 | [SAPUI5 freestyle chat UI](0015-sapui5-freestyle-chat-ui.md)                                                 | Accepted |

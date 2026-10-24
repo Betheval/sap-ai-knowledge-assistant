@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "rootDir": "./webapp",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["@sapui5/types"],
+    "paths": {
+      "knowledge/assistant/*": ["./webapp/*"]
+    }
+  },
+  "include": ["webapp/**/*"]
+}

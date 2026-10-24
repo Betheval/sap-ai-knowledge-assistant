@@ -12,20 +12,27 @@ Example questions:
 - How do I configure XSUAA authentication?
 - How do I deploy a CAP application to Cloud Foundry?
 
+![Chat with a cited answer](docs/images/chat.png)
+
+<p>
+  <img src="docs/images/chat-phone.png" alt="Chat on a phone" width="260" />
+  <img src="docs/images/chat-error.png" alt="Error state when the model host is down" width="520" />
+</p>
+
 ## Status
 
-| Phase | Scope                                                             | Status      |
-| ----- | ----------------------------------------------------------------- | ----------- |
-| 1     | CAP backend, CDS model, `ask` endpoint, Ollama adapter            | Done        |
-| 2     | Real RAG: PostgreSQL + pgvector, ingestion, hybrid retrieval      | In progress |
-| 3     | SAPUI5 / Fiori chat with sources, loading and error states        | Planned     |
-| 4     | Quality and production: tests, observability, Docker, CI/CD, BTP  | Planned     |
-| 5     | SAP AI Core instead of Ollama, behind the same internal interface | Planned     |
+| Phase | Scope                                                             | Status  |
+| ----- | ----------------------------------------------------------------- | ------- |
+| 1     | CAP backend, CDS model, `ask` endpoint, Ollama adapter            | Done    |
+| 2     | Real RAG: PostgreSQL + pgvector, ingestion, hybrid retrieval      | Done    |
+| 3     | SAPUI5 / Fiori chat with sources, loading and error states        | Done    |
+| 4     | Quality and production: tests, observability, Docker, CI/CD, BTP  | Planned |
+| 5     | SAP AI Core instead of Ollama, behind the same internal interface | Planned |
 
 ## Architecture
 
 ```
-SAPUI5 (phase 3) ──OData V4──▶ KnowledgeService (CAP, TypeScript)
+SAPUI5 chat (TS) ──OData V4──▶ KnowledgeService (CAP, TypeScript)
                                    │  ask(conversationId?, question)
                                    ▼
                              answerQuestion (use case)
@@ -33,7 +40,7 @@ SAPUI5 (phase 3) ──OData V4──▶ KnowledgeService (CAP, TypeScript)
                          │                    │
                    LLMProvider            Retriever          ◀── ports
                          │                    │
-                Ollama · fake · (AI Core)   fake · (pgvector + FTS)  ◀── adapters
+                Ollama · fake · (AI Core)   pgvector + full-text (RRF) · fake  ◀── adapters
 ```
 
 The use case only depends on ports; adapters are CAP services selected by
@@ -62,10 +69,13 @@ npm run ingest          # download Capire, chunk, embed and store (add -- --dry-
 npm run watch
 ```
 
+Open **http://localhost:4004/assistant/** for the chat UI (SAPUI5, served by
+`cds-plugin-ui5` inside `cds watch`).
+
 Development users (mocked authentication): `alice` / `alice` and `bob` / `bob`.
 Each user only sees their own conversations.
 
-### Try it
+### Try it from the command line
 
 ```bash
 curl -u alice:alice -X POST http://localhost:4004/odata/v4/knowledge/ask \

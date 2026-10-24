@@ -1,0 +1,15 @@
+{
+  "name": "assistant",
+  "version": "0.1.0",
+  "description": "SAPUI5 chat UI of the SAP AI Knowledge Assistant (ADR 0015)",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@sapui5/types": "1.148.13",
+    "typescript": "~6.0.3",
+    "ui5-tooling-transpile": "^3.13.1"
+  }
+}
