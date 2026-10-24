@@ -1,5 +1,5 @@
 {
-  "description": "Golden set for retrieval quality (ADR 0013). A question is answered at rank n when the n-th retrieved chunk belongs to one of its expected Capire pages. Negatives are questions the documentation does not cover; the retriever should abstain.",
+  "description": "Golden set for retrieval quality (ADR 0013). A question is answered at rank n when the n-th retrieved chunk belongs to one of its expected Capire pages. Questions that do not mention Java are answered for CAP Node.js, the assistant's default runtime. Negatives are questions the documentation does not cover; the retriever should abstain.",
   "questions": [
     {
       "id": "action",
@@ -59,7 +59,7 @@
     {
       "id": "draft",
       "question": "How do I enable draft support for a Fiori Elements application?",
-      "expected": ["guides/uis/fiori.md", "node.js/fiori.md", "java/fiori-drafts.md"]
+      "expected": ["guides/uis/fiori.md", "node.js/fiori.md"]
     },
     {
       "id": "i18n",
@@ -124,11 +124,35 @@
       "id": "kyma",
       "question": "How do I deploy a CAP application to Kyma?",
       "expected": ["guides/deploy/to-kyma.md"]
+    },
+    {
+      "id": "java-cql",
+      "question": "How do I execute a CQL query in CAP Java?",
+      "expected": ["java/working-with-cql/query-execution.md", "java/cqn-services/persistence-services.md"]
+    },
+    {
+      "id": "java-mock-users",
+      "question": "How do I configure mock users in a CAP Java Spring Boot application?",
+      "expected": ["java/security.md"]
+    },
+    {
+      "id": "java-testing",
+      "question": "How do I test the service layer of a CAP Java application?",
+      "expected": ["java/developing-applications/testing.md"]
     }
   ],
   "negatives": [
-    { "id": "capital", "question": "What is the capital of France?" },
-    { "id": "bread", "question": "How do I bake sourdough bread at home?" },
-    { "id": "football", "question": "Who won the 2018 FIFA World Cup?" }
+    {
+      "id": "capital",
+      "question": "What is the capital of France?"
+    },
+    {
+      "id": "bread",
+      "question": "How do I bake sourdough bread at home?"
+    },
+    {
+      "id": "football",
+      "question": "Who won the 2018 FIFA World Cup?"
+    }
   ]
 }

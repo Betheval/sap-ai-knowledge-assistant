@@ -36,6 +36,15 @@ Both searches use the standalone query from
 [ADR 0007](0007-conversation-history-with-query-rewriting.md). The top 6 chunks
 go to the answer step.
 
+**Runtime filter:** CAP has a Node.js and a Java runtime, and Capire documents
+both. The assistant answers for **Node.js by default** and for Java when the
+question or its rewrite mentions Java (Java, Spring Boot, Maven, `pom.xml`, …).
+Both searches leave out the pages of the other runtime (`java/` for Node.js,
+`node.js/` for Java); general guides are always searched, and the answer prompt
+names the runtime so the model picks the right variant inside them. On the same
+25 questions the filter raised hybrid search from 84% / 96% / 100% (MRR 0.910)
+to 88% / 100% / 100% (MRR 0.933).
+
 **Abstention** (ADR 0008): RRF scores are relative, so the retriever abstains
 when no result has a cosine similarity of at least `minSimilarity` (0.5) to the
 question.
@@ -49,6 +58,9 @@ question.
 | Hybrid with that lexical search            | 45%   | 73%   | 86%   | 0.606 |
 | Lexical only, weighted headings, `ts_rank` | 73%   | 86%   | 91%   | 0.797 |
 | **Hybrid, weighted headings, `ts_rank`**   | 82%   | 95%   | 100%  | 0.898 |
+
+Later, with the runtime filter on an extended set of 25 questions (three about
+Java): hybrid 88% / 100% / 100%, MRR 0.933 (`npm run eval:retrieval`).
 
 - The first hybrid attempt was **worse than semantic search alone**: an
   unnormalized `ts_rank_cd` with OR-ed words favors long chunks full of common
@@ -70,6 +82,6 @@ question.
   normalized; the cosine similarity is still returned for abstention.
 - Changing the `search_vector` expression requires recreating the generated
   column; `db/postgres/retrieval-schema.sql` detects an outdated definition.
-- Retrieval tends to surface Java and Node.js variants alike; the answer prompt
-  asks the model to say which runtime an answer applies to.
+- Java users have to say so in their question (or earlier in the
+  conversation); otherwise Java-only pages are not searched.
 - A reranking model could be added later behind the same `Retriever` port.

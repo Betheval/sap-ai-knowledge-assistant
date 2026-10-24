@@ -1,5 +1,5 @@
 import type { ChatMessage, LLMProvider } from '../ports/llm'
-import type { RetrievedChunk, Retriever } from '../ports/retriever'
+import type { RetrievedChunk, Retriever, Runtime } from '../ports/retriever'
 import { parseCitations } from './citations'
 import {
   ANSWER_SYSTEM_PROMPT,
@@ -8,6 +8,7 @@ import {
   buildRewriteMessages,
   formatChunk,
 } from './prompts'
+import { detectRuntime } from './runtime'
 import { estimateTokens } from './tokens'
 
 /** Share of the prompt budget kept free to absorb errors of the token estimate. */
@@ -53,8 +54,10 @@ export async function answerQuestion(
 
   const rewrittenQuery = await rewriteQuery(llm, history, input.question)
 
-  const chunks = await retriever.search(rewrittenQuery, config.topK)
-  const { messages, includedChunks } = buildAnswerPrompt(llm, chunks, history, input.question)
+  // Node.js unless the question (or the conversation it continues) is about Java
+  const runtime = detectRuntime(input.question, rewrittenQuery)
+  const chunks = await retriever.search(rewrittenQuery, config.topK, { runtime })
+  const { messages, includedChunks } = buildAnswerPrompt(llm, chunks, history, input.question, runtime)
 
   // Nothing relevant (or nothing that fits): abstain instead of answering ungrounded (ADR 0008)
   if (includedChunks.length === 0) {
@@ -99,9 +102,11 @@ function buildAnswerPrompt(
   chunks: RetrievedChunk[],
   history: ChatMessage[],
   question: string,
+  runtime: Runtime,
 ): { messages: ChatMessage[]; includedChunks: RetrievedChunk[] } {
   const budget = Math.floor((llm.contextWindow - llm.maxOutputTokens) * (1 - SAFETY_MARGIN))
-  let used = estimateTokens(ANSWER_SYSTEM_PROMPT) + estimateTokens(buildAnswerUserMessage([], question))
+  let used =
+    estimateTokens(ANSWER_SYSTEM_PROMPT) + estimateTokens(buildAnswerUserMessage([], question, runtime))
 
   const includedChunks: RetrievedChunk[] = []
   for (const chunk of chunks) {
@@ -123,7 +128,7 @@ function buildAnswerPrompt(
     messages: [
       { role: 'system', content: ANSWER_SYSTEM_PROMPT },
       ...includedHistory,
-      { role: 'user', content: buildAnswerUserMessage(includedChunks, question) },
+      { role: 'user', content: buildAnswerUserMessage(includedChunks, question, runtime) },
     ],
     includedChunks,
   }

@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../ports/llm'
-import type { RetrievedChunk } from '../ports/retriever'
+import type { RetrievedChunk, Runtime } from '../ports/retriever'
+import { RUNTIME_NAMES } from './runtime'
 
 export const NO_ANSWER =
   "I couldn't find this in the CAP documentation (Capire). " +
@@ -16,7 +17,7 @@ Rules:
 - Do not add facts, definitions or acronym expansions that are not stated in the excerpts, even if you believe them to be true.
 - If the excerpts do not contain the answer, say that the documentation provided does not cover it. Never invent APIs, annotations or configuration.
 - Include short code examples when the excerpts contain them, keeping their indentation.
-- CAP has a Node.js and a Java runtime. If the question does not name one and the excerpts cover a specific runtime, say which runtime your answer applies to.
+- CAP has a Node.js and a Java runtime. Answer for the runtime named in the user's message; when an excerpt shows both variants, use that runtime's variant.
 - Be concise and technical.`
 
 /**
@@ -41,6 +42,9 @@ export function formatChunk(chunk: RetrievedChunk, index: number): string {
   return `[${index + 1}] ${chunk.title}\n${chunk.content}`
 }
 
-export function buildAnswerUserMessage(chunks: RetrievedChunk[], question: string): string {
-  return `${CONTEXT_HEADER}\n\n${chunks.map(formatChunk).join('\n\n')}\n\nQuestion: ${question}\n\n${ANSWER_REMINDER}`
+export function buildAnswerUserMessage(chunks: RetrievedChunk[], question: string, runtime: Runtime): string {
+  return (
+    `${CONTEXT_HEADER}\n\n${chunks.map(formatChunk).join('\n\n')}\n\nQuestion: ${question}\n\n` +
+    `${ANSWER_REMINDER} Answer for CAP ${RUNTIME_NAMES[runtime]}.`
+  )
 }

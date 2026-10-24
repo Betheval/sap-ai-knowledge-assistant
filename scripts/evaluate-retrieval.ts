@@ -5,14 +5,17 @@
  *   npm run eval:retrieval              print metrics
  *   npm run eval:retrieval -- --save    also store them as the new baseline
  *   npm run eval:retrieval -- --verbose show the top results per question
+ *   npm run eval:retrieval -- --no-runtime-filter  search all runtimes, for comparison
  */
 import './pg-profile'
 import cds from '@sap/cds'
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { OTHER_RUNTIME_PATHS } from '../srv/lib/adapters/postgres/hybrid-retriever-service'
 import { hybridSearch, removeStopwords, type SearchMode } from '../srv/lib/adapters/postgres/hybrid-search'
 import { pageUrl } from '../srv/lib/ingestion/capire-source'
 import type { EmbeddingProvider } from '../srv/lib/ports/embeddings'
+import { detectRuntime } from '../srv/lib/rag/runtime'
 
 const GOLDEN = path.join(__dirname, '..', 'test', 'golden', 'retrieval.json')
 const BASELINE = path.join(__dirname, '..', 'test', 'golden', 'retrieval-baseline.json')
@@ -33,6 +36,7 @@ interface RetrieverConfig {
 
 async function main() {
   const args = new Set(process.argv.slice(2))
+  const noFilter = args.has('--no-runtime-filter')
   const golden = JSON.parse(readFileSync(GOLDEN, 'utf8')) as Golden
   const config = cds.env.requires.retriever as unknown as RetrieverConfig
   const baseUrl = (cds.env.ingestion as { capire: { baseUrl: string } }).capire.baseUrl
@@ -53,11 +57,14 @@ async function main() {
       candidates: config.candidates,
       rrfK: config.rrfK,
       mode,
+      // Same runtime filter as the assistant: Node.js unless the question is about Java
+      excludePaths: noFilter ? undefined : OTHER_RUNTIME_PATHS[detectRuntime(question)],
     })
 
   const results: Record<string, unknown> = {}
   console.log(
-    `candidates=${config.candidates} rrfK=${config.rrfK} stopwords=[${config.stopwords}] depth=${DEPTH}\n`,
+    `candidates=${config.candidates} rrfK=${config.rrfK} stopwords=[${config.stopwords}] depth=${DEPTH} ` +
+      `runtime filter=${noFilter ? 'off' : 'on'}\n`,
   )
   console.log('mode       hit@1  hit@3  hit@6  MRR@6')
 

@@ -1,7 +1,10 @@
 import cds from '@sap/cds'
 import type { EmbeddingProvider } from '../../ports/embeddings'
-import type { RetrievedChunk, Retriever } from '../../ports/retriever'
+import type { RetrievedChunk, Retriever, Runtime, SearchOptions } from '../../ports/retriever'
 import { hybridSearch, removeStopwords, type SearchMode } from './hybrid-search'
+
+/** Capire folders that only apply to one runtime: searching for one runtime excludes the other's. */
+export const OTHER_RUNTIME_PATHS: Record<Runtime, string> = { node: 'java/%', java: 'node.js/%' }
 
 /** Configuration from cds.requires.retriever (`pg` profile). */
 interface HybridRetrieverOptions {
@@ -32,7 +35,7 @@ export default class HybridRetrieverService extends cds.Service implements Retri
     return super.init()
   }
 
-  async search(query: string, k: number): Promise<RetrievedChunk[]> {
+  async search(query: string, k: number, options: SearchOptions = {}): Promise<RetrievedChunk[]> {
     const [vector] = await this.embeddings.embed([query])
     const hits = await hybridSearch(this.db, {
       vector: vector!,
@@ -42,6 +45,7 @@ export default class HybridRetrieverService extends cds.Service implements Retri
       candidates: this.options.candidates,
       rrfK: this.options.rrfK,
       mode: this.options.mode,
+      excludePaths: options.runtime && OTHER_RUNTIME_PATHS[options.runtime],
     })
 
     if (!hits.some((h) => h.similarity >= this.options.minSimilarity)) return []

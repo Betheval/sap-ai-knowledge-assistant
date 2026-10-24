@@ -27,6 +27,9 @@ Users must be able to verify every answer against the original documentation.
   system prompt, and cited consistently once they were repeated at the end.
 - Markers that do not match any retrieved chunk are removed from the answer and
   logged.
+- Answers are for CAP **Node.js** unless the question or the conversation is
+  about Java; retrieval is filtered accordingly (ADR 0010) and the prompt names
+  the runtime.
 
 ## Consequences
 

@@ -159,6 +159,20 @@ function doc(
     expect(hits.some((h) => h.breadcrumb.includes('elsewhere'))).toBe(false)
   })
 
+  it('leaves out documents matching the excluded path pattern', async () => {
+    const hits = await hybridSearch(db, {
+      vector: unit(0),
+      text: 'actions',
+      embeddingModel: 'test-model',
+      limit: 5,
+      candidates: 10,
+      rrfK: 60,
+      excludePaths: 'actions%',
+    })
+
+    expect(hits.map((h) => h.breadcrumb)).toEqual(['Deploy to Cloud Foundry'])
+  })
+
   it('handles queries without searchable words', async () => {
     const hits = await search(unit(2), removeStopwords('CAP', ['cap']))
 

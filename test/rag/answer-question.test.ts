@@ -36,7 +36,7 @@ describe('answerQuestion', () => {
     const result = await answerQuestion({ llm, retriever, config }, { question: 'How?', history: [] })
 
     expect(llm.chat).toHaveBeenCalledTimes(1)
-    expect(retriever.search).toHaveBeenCalledWith('How?', 6)
+    expect(retriever.search).toHaveBeenCalledWith('How?', 6, { runtime: 'node' })
     expect(result).toMatchObject({
       answer: 'Register an on handler [1].',
       rewrittenQuery: 'How?',
@@ -76,8 +76,30 @@ describe('answerQuestion', () => {
     )
 
     expect(llm.chat.mock.calls[0][0][0].content).toBe(REWRITE_SYSTEM_PROMPT)
-    expect(retriever.search).toHaveBeenCalledWith('How to deploy a CAP app to Cloud Foundry', 6)
+    expect(retriever.search).toHaveBeenCalledWith('How to deploy a CAP app to Cloud Foundry', 6, {
+      runtime: 'node',
+    })
     expect(result.rewrittenQuery).toBe('How to deploy a CAP app to Cloud Foundry')
+  })
+
+  it('answers for Node.js by default and for Java when the conversation is about Java', async () => {
+    const llm = stubLLM(['answer [1]', 'How do I register an event handler in CAP Java?', 'answer [1]'])
+    const retriever = stubRetriever([chunk('a')])
+
+    await answerQuestion(
+      { llm, retriever, config },
+      { question: 'How do I register a handler?', history: [] },
+    )
+    expect(retriever.search).toHaveBeenLastCalledWith('How do I register a handler?', 6, { runtime: 'node' })
+    expect(llm.chat.mock.calls[0][0].at(-1).content).toMatch(/Answer for CAP Node\.js\.$/)
+
+    // The follow-up does not say "Java", but its rewrite from a Java conversation does
+    const history: ChatMessage[] = [{ role: 'user', content: 'I use CAP Java with Spring Boot.' }]
+    await answerQuestion({ llm, retriever, config }, { question: 'How do I register a handler?', history })
+    expect(retriever.search).toHaveBeenLastCalledWith('How do I register an event handler in CAP Java?', 6, {
+      runtime: 'java',
+    })
+    expect(llm.chat.mock.calls[2][0].at(-1).content).toMatch(/Answer for CAP Java\.$/)
   })
 
   it('falls back to the original question when the rewrite is empty', async () => {
@@ -87,7 +109,7 @@ describe('answerQuestion', () => {
 
     await answerQuestion({ llm, retriever, config }, { question: 'Follow-up?', history })
 
-    expect(retriever.search).toHaveBeenCalledWith('Follow-up?', 6)
+    expect(retriever.search).toHaveBeenCalledWith('Follow-up?', 6, { runtime: 'node' })
   })
 
   it('abstains without calling the model when nothing relevant is retrieved', async () => {

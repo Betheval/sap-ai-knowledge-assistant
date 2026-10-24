@@ -55,6 +55,18 @@ describe('HybridRetrieverService', () => {
     ])
   })
 
+  it('leaves out the documentation of the other runtime', async () => {
+    const spy = jest.spyOn(search, 'hybridSearch').mockResolvedValue([hit('Actions', 0.7)])
+    const service = createService()
+
+    await service.search('q', 6, { runtime: 'node' })
+    expect(spy).toHaveBeenLastCalledWith({}, expect.objectContaining({ excludePaths: 'java/%' }))
+    await service.search('q', 6, { runtime: 'java' })
+    expect(spy).toHaveBeenLastCalledWith({}, expect.objectContaining({ excludePaths: 'node.js/%' }))
+    await service.search('q', 6)
+    expect(spy).toHaveBeenLastCalledWith({}, expect.objectContaining({ excludePaths: undefined }))
+  })
+
   it('abstains when no result is similar enough to the question (ADR 0008)', async () => {
     jest.spyOn(search, 'hybridSearch').mockResolvedValue([hit('Weather', 0.42), hit('Other', 0.31)])
 

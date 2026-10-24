@@ -18,6 +18,8 @@ export interface HybridSearchParams {
   /** RRF constant: score = Σ 1 / (rrfK + rank). */
   rrfK: number
   mode?: SearchMode
+  /** Leave out documents whose repository path matches this LIKE pattern, e.g. 'java/%'. */
+  excludePaths?: string
 }
 
 export interface HybridHit {
@@ -40,6 +42,7 @@ WITH sem AS (
     SELECT ID, embedding <=> $1::vector AS distance
       FROM knowledge_Chunks
      WHERE $7 <> 'lexical' AND embeddingModel = $2
+       AND document_ID NOT IN (SELECT ID FROM knowledge_Documents WHERE path LIKE $8)
      ORDER BY embedding <=> $1::vector
      LIMIT $4) s
 ),
@@ -49,6 +52,7 @@ lex AS (
       FROM knowledge_Chunks c,
            to_tsquery('english', replace(plainto_tsquery('english', $3)::text, '&', '|')) q
      WHERE $7 <> 'semantic' AND c.embeddingModel = $2 AND c.search_vector @@ q
+       AND c.document_ID NOT IN (SELECT ID FROM knowledge_Documents WHERE path LIKE $8)
      ORDER BY relevance DESC
      LIMIT $4) l
 ),
@@ -86,6 +90,8 @@ export async function hybridSearch(
     params.rrfK,
     params.limit,
     params.mode ?? 'hybrid',
+    // LIKE pattern that matches no path when nothing is excluded
+    params.excludePaths ?? '',
   ])
   const rank = (r: Row['semantic_rank']) => (r === null ? null : Number(r))
   return rows.map((r) => ({
