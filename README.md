@@ -96,17 +96,18 @@ available at `/odata/v4/knowledge/Conversations?$expand=messages($expand=sources
 
 ## Scripts
 
-| Script                   | Description                                  |
-| ------------------------ | -------------------------------------------- |
-| `npm run watch`          | Development server: Ollama and PostgreSQL    |
-| `npm run watch:fake`     | Development server: fake LLM, SQLite         |
-| `npm run db:deploy`      | Deploy the schema to PostgreSQL              |
-| `npm run ingest`         | Ingest Capire into the knowledge base        |
-| `npm run eval:retrieval` | Retrieval metrics on the golden set          |
-| `npm test`               | Unit and service tests (no network required) |
-| `npm run typecheck`      | TypeScript type check                        |
-| `npm run lint`           | ESLint (TypeScript and CDS)                  |
-| `npm run format`         | Prettier                                     |
+| Script                   | Description                                                 |
+| ------------------------ | ----------------------------------------------------------- |
+| `npm run watch`          | Development server: Ollama and PostgreSQL                   |
+| `npm run watch:fake`     | Development server: fake LLM, SQLite                        |
+| `npm run watch:trace`    | Development server with OpenTelemetry traces in the console |
+| `npm run db:deploy`      | Deploy the schema to PostgreSQL                             |
+| `npm run ingest`         | Ingest Capire into the knowledge base                       |
+| `npm run eval:retrieval` | Retrieval metrics on the golden set                         |
+| `npm test`               | Unit and service tests (no network required)                |
+| `npm run typecheck`      | TypeScript type check                                       |
+| `npm run lint`           | ESLint (TypeScript and CDS)                                 |
+| `npm run format`         | Prettier                                                    |
 
 ## Documentation corpus and attribution
 

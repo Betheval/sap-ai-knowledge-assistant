@@ -1,3 +1,4 @@
+import cds from '@sap/cds'
 import OllamaLLMService from '../../srv/lib/adapters/ollama/ollama-llm-service'
 import { LLMTimeoutError, LLMUnavailableError } from '../../srv/lib/errors'
 
@@ -48,6 +49,26 @@ describe('OllamaLLMService', () => {
         stream: false,
         options: { num_ctx: 16384, num_predict: 1024, temperature: 0.2 },
       })
+    })
+
+    it('reports token usage and logs when the model had to be loaded first', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({
+          model: 'qwen2.5:7b',
+          message: { content: 'Hi' },
+          prompt_eval_count: 812,
+          eval_count: 37,
+          load_duration: 4_200_000_000,
+        }),
+      )
+      const service = await createService()
+      const info = jest.spyOn(cds.log('ollama'), 'info').mockImplementation(() => undefined as never)
+
+      const result = await service.chat([{ role: 'user', content: 'Hello' }])
+
+      expect(result.usage).toEqual({ promptTokens: 812, outputTokens: 37 })
+      expect(info).toHaveBeenCalledWith('Model qwen2.5:7b was loaded in 4200 ms before answering')
+      info.mockRestore()
     })
 
     it('lets environment variables override the configuration', async () => {

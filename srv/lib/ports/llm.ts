@@ -5,10 +5,17 @@ export interface ChatMessage {
   content: string
 }
 
+export interface TokenUsage {
+  promptTokens: number
+  outputTokens: number
+}
+
 export interface ChatResult {
   content: string
   /** Model that produced the answer, as reported by the provider. */
   model: string
+  /** Token counts, when the provider reports them. */
+  usage?: TokenUsage
 }
 
 export interface HealthStatus {

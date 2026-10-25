@@ -13,8 +13,9 @@
   "scripts": {
     "typer": "cds-typer \"*\" --outputDirectory @cds-models",
     "postinstall": "npm run typer",
-    "watch": "npm run typer && cds-tsx watch --profile development,pg",
-    "watch:fake": "npm run typer && cds-tsx watch --profile development,fake-ai",
+    "watch": "npm run typer && NO_TELEMETRY=true cds-tsx watch --profile development,pg",
+    "watch:fake": "npm run typer && NO_TELEMETRY=true cds-tsx watch --profile development,fake-ai",
+    "watch:trace": "npm run typer && cds-tsx watch --profile development,pg",
     "db:deploy": "cds deploy --profile development,pg && tsx scripts/apply-retrieval-schema.ts",
     "ingest": "tsx scripts/ingest.ts",
     "eval:retrieval": "tsx scripts/evaluate-retrieval.ts",
@@ -30,6 +31,8 @@
   "dependencies": {
     "@cap-js/postgres": "^3.1.2",
     "@cap-js/sqlite": "^3.1.2",
+    "@cap-js/telemetry": "^2.1.1",
+    "@opentelemetry/api": "^1.9.1",
     "@sap/cds": "^10.1.1"
   },
   "devDependencies": {
@@ -175,6 +178,11 @@
       "maxChunkTokens": 800,
       "maxDatabaseBytes": 5368709120,
       "batchSize": 16
+    },
+    "[production]": {
+      "log": {
+        "format": "json"
+      }
     }
   }
 }

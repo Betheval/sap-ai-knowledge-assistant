@@ -1,4 +1,5 @@
 import cds from '@sap/cds'
+import { traced } from '../../observability/tracing'
 import type { EmbeddingProvider } from '../../ports/embeddings'
 import type { RetrievedChunk, Retriever, Runtime, SearchOptions } from '../../ports/retriever'
 import { hybridSearch, removeStopwords, type SearchMode } from './hybrid-search'
@@ -36,17 +37,30 @@ export default class HybridRetrieverService extends cds.Service implements Retri
   }
 
   async search(query: string, k: number, options: SearchOptions = {}): Promise<RetrievedChunk[]> {
-    const [vector] = await this.embeddings.embed([query])
-    const hits = await hybridSearch(this.db, {
-      vector: vector!,
-      text: removeStopwords(query, this.options.stopwords),
-      embeddingModel: this.embeddings.modelId,
-      limit: k,
-      candidates: this.options.candidates,
-      rrfK: this.options.rrfK,
-      mode: this.options.mode,
-      excludePaths: options.runtime && OTHER_RUNTIME_PATHS[options.runtime],
+    const [vector] = await traced('retriever.embed', () => this.embeddings.embed([query]), {
+      'gen_ai.request.model': this.embeddings.modelId,
     })
+    const hits = await traced(
+      'retriever.search',
+      async (span) => {
+        const result = await hybridSearch(this.db, {
+          vector: vector!,
+          text: removeStopwords(query, this.options.stopwords),
+          embeddingModel: this.embeddings.modelId,
+          limit: k,
+          candidates: this.options.candidates,
+          rrfK: this.options.rrfK,
+          mode: this.options.mode,
+          excludePaths: options.runtime && OTHER_RUNTIME_PATHS[options.runtime],
+        })
+        span.setAttributes({
+          'retrieval.hits': result.length,
+          'retrieval.best_similarity': Math.max(0, ...result.map((h) => h.similarity)),
+        })
+        return result
+      },
+      { 'retrieval.runtime': options.runtime ?? 'any', 'retrieval.k': k },
+    )
 
     if (!hits.some((h) => h.similarity >= this.options.minSimilarity)) return []
     return hits.map((h) => ({

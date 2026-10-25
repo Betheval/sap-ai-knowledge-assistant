@@ -163,6 +163,10 @@ export default class App extends Controller {
     this.scrollToEnd()
 
     const conversationId = this.chat.getProperty('/conversationId') as string | null
+    // Our own correlation ID: CAP logs it with every line of this request (ADR 0017),
+    // and the user can quote it when reporting an error
+    const correlationId = crypto.randomUUID()
+    this.odata().changeHttpHeaders({ 'X-Correlation-ID': correlationId })
     const action = this.odata().bindContext('/ask(...)') as ODataContextBinding
     action.setParameter('question', question)
     if (conversationId) action.setParameter('conversationId', conversationId)
@@ -179,7 +183,7 @@ export default class App extends Controller {
       // The OData model also reports the failure as a message; the chat shows it instead
       Messaging.removeAllMessages()
       const info = describeAskError(error)
-      const text = this.text(info.key, info.detail ? [info.detail] : undefined)
+      const text = `${this.text(info.key, info.detail ? [info.detail] : undefined)} ${this.text('errorReference', [correlationId])}`
       this.chat.setProperty(`/messages/${index}`, {
         role: 'assistant',
         question,

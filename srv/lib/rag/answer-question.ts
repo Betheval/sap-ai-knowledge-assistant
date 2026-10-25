@@ -1,4 +1,4 @@
-import type { ChatMessage, LLMProvider } from '../ports/llm'
+import type { ChatMessage, LLMProvider, TokenUsage } from '../ports/llm'
 import type { RetrievedChunk, Retriever, Runtime } from '../ports/retriever'
 import { parseCitations } from './citations'
 import {
@@ -23,6 +23,21 @@ export interface AnswerQuestionDeps {
     historyMessages: number
   }
   logger?: { warn(...args: unknown[]): void }
+  /**
+   * Runs each step of the pipeline, e.g. inside a tracing span (ADR 0017).
+   * Timings are measured by the use case either way.
+   */
+  stage?: StageRunner
+}
+
+export type StageName = 'rewrite' | 'retrieve' | 'generate'
+export type StageRunner = <T>(name: StageName, fn: () => Promise<T>) => Promise<T>
+
+export interface StageTimings {
+  /** Null when the step did not run (first turn, or abstention before generation). */
+  rewriteMs: number | null
+  retrievalMs: number
+  generationMs: number | null
 }
 
 export interface AnswerQuestionInput {
@@ -43,6 +58,8 @@ export interface AnswerQuestionOutput {
   sources: AnsweredSource[]
   /** Null when the assistant abstained without calling the model. */
   model: string | null
+  timings: StageTimings
+  usage?: TokenUsage
 }
 
 export async function answerQuestion(
@@ -50,21 +67,33 @@ export async function answerQuestion(
   input: AnswerQuestionInput,
 ): Promise<AnswerQuestionOutput> {
   const { llm, retriever, config, logger } = deps
+  const run = timed(deps.stage ?? ((_, fn) => fn()))
   const history = input.history.slice(-config.historyMessages)
 
-  const rewrittenQuery = await rewriteQuery(llm, history, input.question)
+  // First turn: nothing to resolve, save one model call (ADR 0007)
+  const rewrite =
+    history.length === 0 ? null : await run('rewrite', () => rewriteQuery(llm, history, input.question))
+  const rewrittenQuery = rewrite?.value ?? input.question
 
   // Node.js unless the question (or the conversation it continues) is about Java
   const runtime = detectRuntime(input.question, rewrittenQuery)
-  const chunks = await retriever.search(rewrittenQuery, config.topK, { runtime })
-  const { messages, includedChunks } = buildAnswerPrompt(llm, chunks, history, input.question, runtime)
+  const retrieval = await run('retrieve', () => retriever.search(rewrittenQuery, config.topK, { runtime }))
+  const { messages, includedChunks } = buildAnswerPrompt(
+    llm,
+    retrieval.value,
+    history,
+    input.question,
+    runtime,
+  )
 
   // Nothing relevant (or nothing that fits): abstain instead of answering ungrounded (ADR 0008)
   if (includedChunks.length === 0) {
-    return { answer: NO_ANSWER, rewrittenQuery, sources: [], model: null }
+    const timings = { rewriteMs: rewrite?.ms ?? null, retrievalMs: retrieval.ms, generationMs: null }
+    return { answer: NO_ANSWER, rewrittenQuery, sources: [], model: null, timings }
   }
 
-  const result = await llm.chat(messages)
+  const generation = await run('generate', () => llm.chat(messages))
+  const result = generation.value
 
   const citations = parseCitations(result.content, includedChunks.length)
   if (citations.invalid.length > 0) {
@@ -76,13 +105,21 @@ export async function answerQuestion(
     rewrittenQuery,
     sources: includedChunks.map((chunk, i) => ({ ...chunk, cited: citations.cited.has(i + 1) })),
     model: result.model,
+    timings: { rewriteMs: rewrite?.ms ?? null, retrievalMs: retrieval.ms, generationMs: generation.ms },
+    usage: result.usage,
+  }
+}
+
+/** Wraps a stage runner so that each step also reports its duration. */
+function timed(stage: StageRunner) {
+  return async <T>(name: StageName, fn: () => Promise<T>): Promise<{ value: T; ms: number }> => {
+    const start = performance.now()
+    const value = await stage(name, fn)
+    return { value, ms: Math.round(performance.now() - start) }
   }
 }
 
 async function rewriteQuery(llm: LLMProvider, history: ChatMessage[], question: string): Promise<string> {
-  // First turn: nothing to resolve, save one model call
-  if (history.length === 0) return question
-
   const result = await llm.chat(buildRewriteMessages(history, question))
   const rewritten = result.content
     .split('\n')[0]

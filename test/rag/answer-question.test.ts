@@ -1,6 +1,6 @@
 import type { ChatMessage, LLMProvider } from '../../srv/lib/ports/llm'
 import type { RetrievedChunk, Retriever } from '../../srv/lib/ports/retriever'
-import { answerQuestion } from '../../srv/lib/rag/answer-question'
+import { answerQuestion, type StageRunner } from '../../srv/lib/rag/answer-question'
 import {
   ANSWER_REMINDER,
   ANSWER_SYSTEM_PROMPT,
@@ -102,6 +102,50 @@ describe('answerQuestion', () => {
     expect(llm.chat.mock.calls[2][0].at(-1).content).toMatch(/Answer for CAP Java\.$/)
   })
 
+  it('runs each step through the stage hook and reports timings and token usage', async () => {
+    const llm = stubLLM(['rewritten', 'answer [1]'])
+    llm.chat.mockImplementation(async () => ({
+      content: 'answer [1]',
+      model: 'stub-model',
+      usage: { promptTokens: 900, outputTokens: 40 },
+    }))
+    const stages: string[] = []
+    const stage: StageRunner = async (name, fn) => {
+      stages.push(name)
+      return fn()
+    }
+    const history: ChatMessage[] = [{ role: 'user', content: 'Earlier' }]
+
+    const result = await answerQuestion(
+      { llm, retriever: stubRetriever([chunk('a')]), config, stage },
+      { question: 'Follow-up?', history },
+    )
+
+    expect(stages).toEqual(['rewrite', 'retrieve', 'generate'])
+    expect(result.timings).toEqual({
+      rewriteMs: expect.any(Number),
+      retrievalMs: expect.any(Number),
+      generationMs: expect.any(Number),
+    })
+    expect(result.usage).toEqual({ promptTokens: 900, outputTokens: 40 })
+  })
+
+  it('skips the rewrite stage on the first turn', async () => {
+    const stages: string[] = []
+    const stage: StageRunner = async (name, fn) => {
+      stages.push(name)
+      return fn()
+    }
+
+    const result = await answerQuestion(
+      { llm: stubLLM(['answer']), retriever: stubRetriever([chunk('a')]), config, stage },
+      { question: 'Q', history: [] },
+    )
+
+    expect(stages).toEqual(['retrieve', 'generate'])
+    expect(result.timings.rewriteMs).toBeNull()
+  })
+
   it('falls back to the original question when the rewrite is empty', async () => {
     const llm = stubLLM(['   ', 'answer'])
     const retriever = stubRetriever([chunk('a')])
@@ -121,7 +165,13 @@ describe('answerQuestion', () => {
     )
 
     expect(llm.chat).not.toHaveBeenCalled()
-    expect(result).toEqual({ answer: NO_ANSWER, rewrittenQuery: 'Weather?', sources: [], model: null })
+    expect(result).toEqual({
+      answer: NO_ANSWER,
+      rewrittenQuery: 'Weather?',
+      sources: [],
+      model: null,
+      timings: { rewriteMs: null, retrievalMs: expect.any(Number), generationMs: null },
+    })
   })
 
   it('removes citations without a matching source and logs them', async () => {

@@ -2,9 +2,10 @@ import cds from '@sap/cds'
 import { ask } from '#cds-models/KnowledgeService'
 import { Conversations, Messages } from '#cds-models/knowledge'
 import { ProviderError } from './lib/errors'
+import { traced } from './lib/observability/tracing'
 import type { ChatMessage, LLMProvider } from './lib/ports/llm'
 import type { Retriever } from './lib/ports/retriever'
-import { answerQuestion } from './lib/rag/answer-question'
+import { answerQuestion, type StageRunner } from './lib/rag/answer-question'
 
 const LOG = cds.log('knowledge')
 const MAX_QUESTION_LENGTH = 2000
@@ -15,6 +16,8 @@ export default class KnowledgeService extends cds.ApplicationService {
     const retriever = (await cds.connect.to('retriever')) as unknown as Retriever
     const config = cds.env.rag as { topK: number; historyMessages: number }
     const { SELECT, INSERT } = cds.ql
+    // Each pipeline step becomes a span below the request span of @cap-js/telemetry (ADR 0017)
+    const stage: StageRunner = (name, fn) => traced(`rag.${name}`, () => fn())
 
     this.on(ask, async (req) => {
       const { conversationId } = req.data
@@ -45,7 +48,7 @@ export default class KnowledgeService extends cds.ApplicationService {
 
       let result
       try {
-        result = await answerQuestion({ llm, retriever, config, logger: LOG }, { question, history })
+        result = await answerQuestion({ llm, retriever, config, logger: LOG, stage }, { question, history })
       } catch (error) {
         if (error instanceof ProviderError) {
           LOG.error(error.message)
@@ -78,6 +81,23 @@ export default class KnowledgeService extends cds.ApplicationService {
           sources: sources.map((s, i) => ({ ...s, rank: i + 1 })),
         },
       ])
+
+      // One structured line per question (ADR 0017). CAP's JSON log format merges the fields of an
+      // object with a `message` into the log record and adds the correlation ID.
+      LOG.info({
+        message: 'answered',
+        conversationId: ID,
+        messageId,
+        followUp: history.length > 0,
+        abstained: result.model === null,
+        model: result.model,
+        sources: sources.length,
+        cited: sources.filter((s) => s.cited).length,
+        latencyMs,
+        ...result.timings,
+        promptTokens: result.usage?.promptTokens,
+        outputTokens: result.usage?.outputTokens,
+      })
 
       return { conversationId: ID, messageId, answer: result.answer, sources, model: result.model, latencyMs }
     })
