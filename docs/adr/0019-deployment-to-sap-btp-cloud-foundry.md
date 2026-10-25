@@ -23,7 +23,7 @@ models in the cloud it would hold no documents.
 
 ## Decision
 
-**What runs on SAP BTP** (`mta.yaml`, profile `production,btp-no-model`):
+**What runs on SAP BTP** (`mta.yaml`, profiles `btp,btp-no-model` on top of `production`):
 
 | Module / resource     | Content                                                                 |
 | --------------------- | ----------------------------------------------------------------------- |
@@ -49,7 +49,9 @@ models in the cloud it would hold no documents.
 
 - The CI job `mta` builds the archive on a clean runner (`npm ci`,
   `npm run build` with the credentials check of ADR 0018, `scripts/prepare-cf.ts`
-  for a production-only `package.json`/lockfile and the UI in the approuter),
+  for a production-only `package.json`, a lockfile derived from the project's
+  lockfile so the deployed versions are exactly the tested ones, and the UI in the
+  approuter),
   checks the unpacked archive for credentials again, and publishes it as an
   artifact for 7 days.
 - The CI job `deploy` runs after all other jobs on pushes to `main`, downloads
@@ -74,3 +76,7 @@ models in the cloud it would hold no documents.
   back (the build already prepares `gen/pg` with the retrieval schema step) and
   either SAP AI Core adapters (ADR 0003) or the Cloud Connector.
 - Trial resources expire if not renewed; the CD job then fails until they are.
+- Lesson from the first deployment: regenerating the lockfile from the registry
+  deployed `@sap/cds` 10.2.1 while tests ran on 10.1.1, and 10.2 resolves profile
+  precedence differently. Deriving the lockfile from the project's and keeping
+  combined profiles disjoint (ADR 0018) closed both gaps.

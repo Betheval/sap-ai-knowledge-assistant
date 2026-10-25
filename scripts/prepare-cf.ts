@@ -35,7 +35,9 @@ writeJson(path.join(srv, 'package.json'), {
   dependencies: pkg.dependencies,
   cds: pkg.cds,
 })
-rmSync(path.join(srv, 'package-lock.json'), { force: true })
+// Start from the project's lockfile, so the deployed versions are exactly the tested ones;
+// npm only drops the entries of development dependencies and workspaces
+copyFileSync(at('package-lock.json'), path.join(srv, 'package-lock.json'))
 run(srv, 'npm', [
   'install',
   '--package-lock-only',

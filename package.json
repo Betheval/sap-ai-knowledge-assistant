@@ -135,20 +135,22 @@
         }
       },
       "[production]": {
-        "db": {
-          "credentials": {
-            "database": "knowledge",
-            "user": "knowledge_app"
-          }
-        },
         "retriever": {
           "kind": "hybrid-pg-retriever"
-        },
+        }
+      },
+      "[btp]": {
         "auth": "xsuaa"
       },
       "[standalone]": {
         "auth": {
           "kind": "basic"
+        },
+        "db": {
+          "credentials": {
+            "database": "knowledge",
+            "user": "knowledge_app"
+          }
         }
       },
       "[btp-no-model]": {

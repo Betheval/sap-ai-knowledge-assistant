@@ -28,7 +28,7 @@ modules:
     properties:
       # No model host is reachable from SAP BTP (ADR 0019): in-memory SQLite with sample
       # conversations; every question answers that the language model is unavailable
-      CDS_ENV: production,btp-no-model
+      CDS_ENV: btp,btp-no-model
       NO_TELEMETRY: true
     build-parameters:
       builder: npm-ci

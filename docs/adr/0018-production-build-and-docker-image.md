@@ -35,14 +35,22 @@ produced an artifact containing the database password.
 
 **Configuration**
 
-- `[production]` uses the hybrid PostgreSQL retriever and defaults to database
-  `knowledge` and user `knowledge_app`; host, port and password come from the
-  environment (`CDS_REQUIRES_DB_CREDENTIALS_*`) or a service binding.
-- Production authentication stays `jwt` (XSUAA, phase 4 step 4). The
-  `standalone` profile, for running the image outside BTP, uses basic
-  authentication with users from `CDS_REQUIRES_AUTH_USERS`; no user or password
-  is part of the code or the image.
-- `@cap-js/sqlite` is a development dependency only.
+- Profiles that are combined never set the same key, because CAP changed the
+  precedence of `CDS_ENV` profiles between 10.1 (last wins) and 10.2 (first
+  wins); configurations behave the same in any order and version:
+
+  | Profile        | Sets                                                         | Used by          |
+  | -------------- | ------------------------------------------------------------ | ---------------- |
+  | `production`   | hybrid PostgreSQL retriever, JSON logs                       | every deployment |
+  | `standalone`   | basic authentication, database `knowledge` / `knowledge_app` | Docker           |
+  | `btp`          | XSUAA authentication                                         | SAP BTP          |
+  | `btp-no-model` | in-memory SQLite (ADR 0019)                                  | SAP BTP          |
+
+- Host, port and password come from the environment (`CDS_REQUIRES_DB_CREDENTIALS_*`)
+  or a service binding. `standalone` users come from `CDS_REQUIRES_AUTH_USERS`; no
+  user or password is part of the code or the image.
+- `@cap-js/sqlite` is a production dependency for the in-memory database; it uses
+  the Node.js built-in driver, without native modules.
 
 **Docker image** (`Dockerfile`)
 
