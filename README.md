@@ -77,6 +77,30 @@ Open **http://localhost:4004/assistant/** for the chat UI (SAPUI5, served by
 Development users (mocked authentication): `alice` / `alice` and `bob` / `bob`.
 Each user only sees their own conversations.
 
+### Run the production image
+
+```bash
+npm run docker:build           # or: docker build -t knowledge-assistant .
+```
+
+Create a `docker.env` file (never commit it):
+
+```bash
+CDS_ENV=standalone             # production without SAP BTP: basic authentication
+OLLAMA_BASE_URL=http://<ollama-host>:11434
+CDS_REQUIRES_DB_CREDENTIALS_HOST=<postgres-host>
+CDS_REQUIRES_DB_CREDENTIALS_PASSWORD=<knowledge_app password>
+CDS_REQUIRES_AUTH_USERS={"alice":{"password":"<choose one>","roles":["KnowledgeUser"]}}
+```
+
+```bash
+docker run -p 4004:4004 --env-file docker.env knowledge-assistant
+```
+
+The image contains the compiled backend and the built UI (SAPUI5 is loaded from
+the SAP CDN). The database schema is deployed beforehand with `npm run db:deploy`.
+See [ADR 0018](docs/adr/0018-production-build-and-docker-image.md).
+
 ### Try it from the command line
 
 ```bash
@@ -104,6 +128,8 @@ available at `/odata/v4/knowledge/Conversations?$expand=messages($expand=sources
 | `npm run db:deploy`      | Deploy the schema to PostgreSQL                             |
 | `npm run ingest`         | Ingest Capire into the knowledge base                       |
 | `npm run eval:retrieval` | Retrieval metrics on the golden set                         |
+| `npm run build`          | Production build (backend, UI, credentials check)           |
+| `npm run docker:build`   | Production Docker image                                     |
 | `npm test`               | Unit and service tests (no network required)                |
 | `npm run typecheck`      | TypeScript type check                                       |
 | `npm run lint`           | ESLint (TypeScript and CDS)                                 |

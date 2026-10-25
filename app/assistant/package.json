@@ -5,11 +5,14 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "ui5 build --clean-dest --dest dist && node use-cdn.mjs"
   },
   "devDependencies": {
     "@sapui5/types": "1.148.13",
+    "@ui5/cli": "^4.0.71",
     "typescript": "~6.0.3",
-    "ui5-tooling-transpile": "^3.13.1"
+    "ui5-tooling-transpile": "^3.13.1",
+    "yaml": "^2"
   }
 }

@@ -19,8 +19,10 @@
     "db:deploy": "cds deploy --profile development,pg && tsx scripts/apply-retrieval-schema.ts",
     "ingest": "tsx scripts/ingest.ts",
     "eval:retrieval": "tsx scripts/evaluate-retrieval.ts",
+    "build": "cds build --production && npm run build --workspace app/assistant && tsx scripts/check-build-secrets.ts",
+    "docker:build": "docker build -t knowledge-assistant .",
     "test": "npm run typer && jest",
-    "typecheck": "npm run typer && tsc --noEmit && tsc --noEmit -p app/assistant",
+    "typecheck": "npm run typer && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p app/assistant",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -30,7 +32,6 @@
   },
   "dependencies": {
     "@cap-js/postgres": "^3.1.2",
-    "@cap-js/sqlite": "^3.1.2",
     "@cap-js/telemetry": "^2.1.1",
     "@opentelemetry/api": "^1.9.1",
     "@sap/cds": "^10.1.1"
@@ -39,6 +40,7 @@
     "@cap-js/cds-test": "^1.0.2",
     "@cap-js/cds-typer": "^0.41.1",
     "@cap-js/cds-types": "^0.20.0",
+    "@cap-js/sqlite": "^3.1.2",
     "@eslint/js": "^10",
     "@sap/cds-dk": "^10.1.0",
     "@sap/eslint-plugin-cds": "^4.2.5",
@@ -69,7 +71,13 @@
           "impl": "srv/lib/adapters/ollama/ollama-embedding-service"
         },
         "hybrid-pg-retriever": {
-          "impl": "srv/lib/adapters/postgres/hybrid-retriever-service"
+          "impl": "srv/lib/adapters/postgres/hybrid-retriever-service",
+          "candidates": 30,
+          "rrfK": 60,
+          "minSimilarity": 0.5,
+          "stopwords": [
+            "cap"
+          ]
         }
       },
       "llm": {
@@ -119,13 +127,23 @@
           }
         },
         "retriever": {
-          "kind": "hybrid-pg-retriever",
-          "candidates": 30,
-          "rrfK": 60,
-          "minSimilarity": 0.5,
-          "stopwords": [
-            "cap"
-          ]
+          "kind": "hybrid-pg-retriever"
+        }
+      },
+      "[production]": {
+        "db": {
+          "credentials": {
+            "database": "knowledge",
+            "user": "knowledge_app"
+          }
+        },
+        "retriever": {
+          "kind": "hybrid-pg-retriever"
+        }
+      },
+      "[standalone]": {
+        "auth": {
+          "kind": "basic"
         }
       },
       "[fake-ai]": {

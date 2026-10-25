@@ -87,3 +87,57 @@ jobs:
             console.log('integration tests passed:', passed, 'of', results.length)
             if (passed === 0 || passed !== results.length) process.exit(1)
           "
+
+  docker:
+    name: Production image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the image (includes the credentials check of the build output)
+        run: docker build -t knowledge-assistant:ci .
+
+      - name: Prepare the knowledge databases
+        run: psql -v ON_ERROR_STOP=1 -v app_password=ci-app-password -f infra/postgres/setup.sql
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+
+      - name: Start the container
+        run: |
+          docker run -d --name app --network host \
+            -e CDS_ENV=standalone \
+            -e CDS_REQUIRES_DB_CREDENTIALS_HOST=localhost \
+            -e CDS_REQUIRES_DB_CREDENTIALS_PASSWORD=ci-app-password \
+            -e 'CDS_REQUIRES_AUTH_USERS={"ci":{"password":"ci","roles":["KnowledgeUser"]}}' \
+            knowledge-assistant:ci
+          for i in $(seq 1 30); do curl -sf localhost:4004/health && break; sleep 2; done
+
+      - name: Smoke test
+        run: |
+          curl -sf localhost:4004/health
+          curl -sf -o /dev/null localhost:4004/assistant/index.html
+          grep -q 'ui5.sap.com' <(curl -sf localhost:4004/assistant/index.html)
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:4004/odata/v4/knowledge/Conversations)" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' -u ci:ci localhost:4004/odata/v4/knowledge/\$metadata)" = 200
+
+      - name: Container logs
+        if: always()
+        run: docker logs app

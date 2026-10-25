@@ -1,5 +1,6 @@
 node_modules/
 gen/
+app/assistant/dist/
 coverage/
 .cache/
 @cds-models/
@@ -18,3 +19,6 @@ default-env.json
 # OS / editor
 .DS_Store
 .vscode/
+
+# Docker run configuration
+docker.env

@@ -18,6 +18,8 @@ builder:
   customTasks:
     - name: ui5-tooling-transpile-task
       afterTask: replaceVersion
+      configuration:
+        omitTSFromBuildResult: true
 customConfiguration:
   cds-plugin-ui5:
     mountPath: /assistant

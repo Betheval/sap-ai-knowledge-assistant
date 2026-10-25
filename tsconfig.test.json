@@ -1,0 +1,8 @@
+{
+  "//": "Type checking and Jest: production sources plus tests (the build uses tsconfig.json)",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest"]
+  },
+  "include": ["srv/**/*", "scripts/**/*", "@cds-models/**/*", "test/**/*"]
+}

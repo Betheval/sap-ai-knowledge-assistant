@@ -1,0 +1,23 @@
+# Never send local configuration or secrets into an image (ADR 0018)
+.env
+.env.*
+!.env.example
+*.env
+default-env.json
+.cdsrc-private.json
+
+# Build output and caches are produced inside the image
+node_modules
+**/node_modules
+gen
+@cds-models
+app/assistant/dist
+.cache
+coverage
+
+.git
+.github
+.vscode
+.DS_Store
+*.sqlite
+*.db

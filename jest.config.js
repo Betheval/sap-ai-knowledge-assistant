@@ -6,7 +6,7 @@ module.exports = {
   modulePathIgnorePatterns: ['<rootDir>/.cache/'],
   setupFiles: ['<rootDir>/test/setup-env.ts'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
+    '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }],
   },
   // CAP keeps internal handles open after the server shuts down
   forceExit: true,

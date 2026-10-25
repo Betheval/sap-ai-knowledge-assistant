@@ -3,10 +3,14 @@ import tseslint from 'typescript-eslint'
 import cds from '@sap/eslint-plugin-cds'
 
 export default tseslint.config(
-  { ignores: ['node_modules/', 'gen/', '@cds-models/', 'coverage/', '.cache/'] },
+  { ignores: ['node_modules/', 'gen/', '@cds-models/', 'coverage/', '.cache/', 'app/assistant/dist/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   cds.configs.recommended,
+  {
+    files: ['**/*.mjs'],
+    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
+  },
   {
     files: ['*.js'],
     languageOptions: { sourceType: 'commonjs', globals: { module: 'writable', require: 'readonly' } },

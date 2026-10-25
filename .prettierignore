@@ -4,3 +4,4 @@ gen/
 coverage/
 package-lock.json
 .cache/
+app/assistant/dist/
