@@ -101,6 +101,26 @@ The image contains the compiled backend and the built UI (SAPUI5 is loaded from
 the SAP CDN). The database schema is deployed beforehand with `npm run db:deploy`.
 See [ADR 0018](docs/adr/0018-production-build-and-docker-image.md).
 
+### Deploy to SAP BTP, Cloud Foundry
+
+Requires the [cf CLI](https://github.com/cloudfoundry/cli) with the `multiapps`
+plugin and a PostgreSQL instance with the `vector` extension (once per space, see
+[ADR 0019](docs/adr/0019-deployment-to-sap-btp-cloud-foundry.md)):
+
+```bash
+cf create-service postgresql-db trial knowledge-db
+# then enable the extension through the service API (ADR 0019)
+
+# deploy the archive the CI built for the latest commit on main
+gh run download --name "mta-archive-$(git rev-parse HEAD)" --dir mta_archives
+npm run deploy:cf
+```
+
+Assign the role collection `KnowledgeUser (knowledge-assistant <space>)` to your
+user in the BTP cockpit, then open the `knowledge-assistant` route. Until SAP AI
+Core is integrated (phase 5), the cloud deployment answers with the fake model
+and sample documents: login, UI, history and authorization are real.
+
 ### Try it from the command line
 
 ```bash

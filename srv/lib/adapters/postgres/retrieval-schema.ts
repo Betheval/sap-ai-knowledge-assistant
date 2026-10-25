@@ -34,8 +34,11 @@ export function splitStatements(sql: string): string[] {
 }
 
 /** Applies the SQL-managed retrieval columns and indexes (ADR 0011). Idempotent. */
-export async function applyRetrievalSchema(db: cds.DatabaseService): Promise<number> {
-  const statements = splitStatements(readFileSync(RETRIEVAL_SCHEMA_FILE, 'utf8'))
+export async function applyRetrievalSchema(
+  db: cds.DatabaseService,
+  file = RETRIEVAL_SCHEMA_FILE,
+): Promise<number> {
+  const statements = splitStatements(readFileSync(file, 'utf8'))
   for (const statement of statements) await db.run(statement)
   return statements.length
 }

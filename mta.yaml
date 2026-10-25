@@ -1,0 +1,105 @@
+_schema-version: 3.3.0
+ID: sap-ai-knowledge-assistant
+version: 0.1.0
+description: 'RAG assistant that answers SAP CAP development questions from the Capire documentation, with cited sources.'
+parameters:
+  enable-parallel-deployments: true
+
+# Build in an environment without database credentials: `npm run build` fails if
+# any end up in the output (ADR 0018). See ADR 0019 for the deployment.
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npm run build
+        - npx tsx scripts/prepare-cf.ts
+
+modules:
+  - name: knowledge-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 512M
+      disk-quota: 1024M
+      health-check-type: http
+      health-check-http-endpoint: /health
+    properties:
+      # The model host is not reachable from SAP BTP until SAP AI Core (phase 5):
+      # answers come from the fake model and sample documents
+      CDS_ENV: production,btp-demo
+      NO_TELEMETRY: true
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: knowledge-auth
+      - name: knowledge-db
+
+  - name: knowledge-db-deployer
+    type: nodejs
+    path: gen/pg
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 256M
+      no-route: true
+      no-start: true
+      tasks:
+        - name: deploy-to-postgresql
+          command: npm start
+    requires:
+      - name: knowledge-db
+
+  - name: knowledge-assistant
+    type: approuter.nodejs
+    path: app/router
+    parameters:
+      keep-existing-routes: true
+      memory: 256M
+      disk-quota: 256M
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api # used in xs-app.json
+          url: ~{srv-url}
+          forwardAuthToken: true
+          timeout: 120000 # answers take several seconds
+      - name: knowledge-auth
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
+
+resources:
+  - name: knowledge-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: knowledge-assistant-${org}-${space}
+        tenant-mode: dedicated
+        oauth2-configuration:
+          credential-types:
+            - binding-secret
+            - x509
+          redirect-uris:
+            - https://*~{app-api/app-uri}/**
+        role-collections:
+          - name: 'KnowledgeUser (knowledge-assistant ${space})'
+            description: 'Users of the SAP AI Knowledge Assistant'
+            role-template-references:
+              - '$XSAPPNAME.KnowledgeUser'
+    requires:
+      - name: app-api
+
+  # Created beforehand: the vector extension must be enabled before the schema is deployed (ADR 0019)
+  - name: knowledge-db
+    type: org.cloudfoundry.existing-service

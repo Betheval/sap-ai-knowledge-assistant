@@ -8,9 +8,10 @@
     "node": ">=22"
   },
   "workspaces": [
-    "app/*"
+    "app/assistant"
   ],
   "scripts": {
+    "start": "cds-serve",
     "typer": "cds-typer \"*\" --outputDirectory @cds-models",
     "postinstall": "npm run typer",
     "watch": "npm run typer && NO_TELEMETRY=true cds-tsx watch --profile development,pg",
@@ -21,6 +22,8 @@
     "eval:retrieval": "tsx scripts/evaluate-retrieval.ts",
     "build": "cds build --production && npm run build --workspace app/assistant && tsx scripts/check-build-secrets.ts",
     "docker:build": "docker build -t knowledge-assistant .",
+    "build:mta": "mbt build -t mta_archives",
+    "deploy:cf": "cf deploy mta_archives/sap-ai-knowledge-assistant_0.1.0.mtar",
     "test": "npm run typer && jest",
     "typecheck": "npm run typer && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p app/assistant",
     "lint": "eslint .",
@@ -34,7 +37,8 @@
     "@cap-js/postgres": "^3.1.2",
     "@cap-js/telemetry": "^2.1.1",
     "@opentelemetry/api": "^1.9.1",
-    "@sap/cds": "^10.1.1"
+    "@sap/cds": "^10.1.1",
+    "@sap/xssec": "^4.15.0"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^1.0.2",
@@ -139,11 +143,20 @@
         },
         "retriever": {
           "kind": "hybrid-pg-retriever"
-        }
+        },
+        "auth": "xsuaa"
       },
       "[standalone]": {
         "auth": {
           "kind": "basic"
+        }
+      },
+      "[btp-demo]": {
+        "llm": {
+          "kind": "fake-llm"
+        },
+        "retriever": {
+          "kind": "fake-retriever"
         }
       },
       "[fake-ai]": {

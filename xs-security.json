@@ -1,0 +1,17 @@
+{
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.KnowledgeUser",
+      "description": "Ask questions and read own conversations"
+    }
+  ],
+  "attributes": [],
+  "role-templates": [
+    {
+      "name": "KnowledgeUser",
+      "description": "User of the SAP AI Knowledge Assistant",
+      "scope-references": ["$XSAPPNAME.KnowledgeUser"],
+      "attribute-references": []
+    }
+  ]
+}

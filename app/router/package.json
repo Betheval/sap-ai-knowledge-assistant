@@ -1,0 +1,14 @@
+{
+  "name": "router",
+  "description": "Application router: XSUAA login, UI and routes to the CAP service (ADR 0019)",
+  "private": true,
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0"
+  },
+  "dependencies": {
+    "@sap/approuter": "^23.3.0"
+  },
+  "scripts": {
+    "start": "node node_modules/@sap/approuter/approuter.js"
+  }
+}

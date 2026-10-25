@@ -141,3 +141,35 @@ jobs:
       - name: Container logs
         if: always()
         run: docker logs app
+
+  # Build once in a clean environment, deploy that same archive (ADR 0019)
+  mta:
+    name: SAP BTP archive (MTA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build the MTA archive (includes the credentials check of the build output)
+        run: npx --yes mbt@1.2.49 build -t mta_archives
+
+      - name: Check the archive itself for credentials
+        run: |
+          mkdir -p mtar-content
+          unzip -q mta_archives/*.mtar -d mtar-content
+          for zip in mtar-content/*/data.zip; do unzip -q -o "$zip" -d "${zip%/data.zip}/content"; done
+          npx tsx scripts/check-build-secrets.ts mtar-content
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mta-archive-${{ github.sha }}
+          path: mta_archives/*.mtar
+          if-no-files-found: error
+          retention-days: 7

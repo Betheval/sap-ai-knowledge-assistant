@@ -22,3 +22,8 @@ default-env.json
 
 # Docker run configuration
 docker.env
+
+# MTA build
+mta_archives/
+.mta/
+*.mtar

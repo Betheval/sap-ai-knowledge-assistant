@@ -23,3 +23,4 @@ New records start from [template.md](template.md).
 | 0016 | [Continuous integration with GitHub Actions](0016-continuous-integration.md)                                 | Accepted |
 | 0017 | [Observability: structured logs, correlation IDs, stage timings and traces](0017-observability.md)           | Accepted |
 | 0018 | [Production build and Docker image](0018-production-build-and-docker-image.md)                               | Accepted |
+| 0019 | [Deployment to SAP BTP, Cloud Foundry](0019-deployment-to-sap-btp-cloud-foundry.md)                          | Accepted |

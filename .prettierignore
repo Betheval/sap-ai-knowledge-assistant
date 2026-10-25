@@ -5,3 +5,6 @@ coverage/
 package-lock.json
 .cache/
 app/assistant/dist/
+app/router/resources/
+mta_archives/
+.mta/
