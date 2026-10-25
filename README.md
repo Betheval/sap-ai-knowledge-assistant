@@ -103,23 +103,25 @@ See [ADR 0018](docs/adr/0018-production-build-and-docker-image.md).
 
 ### Deploy to SAP BTP, Cloud Foundry
 
-Requires the [cf CLI](https://github.com/cloudfoundry/cli) with the `multiapps`
-plugin and a PostgreSQL instance with the `vector` extension (once per space, see
-[ADR 0019](docs/adr/0019-deployment-to-sap-btp-cloud-foundry.md)):
+Every commit to `main` is tested, packaged as an MTA archive and deployed to
+SAP BTP by GitHub Actions (job `deploy`, enabled with the repository variable
+`BTP_DEPLOY=true`; credentials in the GitHub environment `btp`). To deploy by
+hand the archive the CI built:
 
 ```bash
-cf create-service postgresql-db trial knowledge-db
-# then enable the extension through the service API (ADR 0019)
-
-# deploy the archive the CI built for the latest commit on main
 gh run download --name "mta-archive-$(git rev-parse HEAD)" --dir mta_archives
-npm run deploy:cf
+npm run deploy:cf                  # needs the cf CLI with the multiapps plugin
 ```
 
 Assign the role collection `KnowledgeUser (knowledge-assistant <space>)` to your
-user in the BTP cockpit, then open the `knowledge-assistant` route. Until SAP AI
-Core is integrated (phase 5), the cloud deployment answers with the fake model
-and sample documents: login, UI, history and authorization are real.
+user in the BTP cockpit, then open the `knowledge-assistant` route.
+
+**The cloud deployment has no language model:** the model host is in a local
+network that SAP BTP cannot reach. Login (XSUAA), UI, authorization and a sample
+history are real; every question answers that the language model is unavailable,
+which is the designed behavior without a model. Answering questions is shown
+locally. See [ADR 0019](docs/adr/0019-deployment-to-sap-btp-cloud-foundry.md) and
+"AI in the cloud" below.
 
 ### Try it from the command line
 
@@ -137,6 +139,59 @@ available at `/odata/v4/knowledge/Conversations?$expand=messages($expand=sources
 | `/odata/v4/knowledge` | OData V4 service: `ask` action, conversation history   |
 | `/health`             | Liveness of the application                            |
 | `/health/llm`         | Model host reachable, model pulled, running on the GPU |
+
+## AI in the cloud
+
+The use case depends on ports, not on Ollama
+([ADR 0003](docs/adr/0003-provider-abstraction-via-cap-services.md)), so the
+cloud deployment can get models in two ways without changing the API, the UI or
+the RAG logic.
+
+**Today: local models, cloud without a model**
+
+```
+Laptop / local network                      SAP BTP (trial)
+┌───────────────────────────────┐           ┌──────────────────────────────────┐
+│ CAP + UI (npm run watch)      │           │ Approuter (XSUAA) → CAP service  │
+│   ├─ Ollama (qwen2.5, bge-m3) │           │   in-memory SQLite, demo history │
+│   └─ PostgreSQL + pgvector    │           │   no model → model unavailable   │
+└───────────────────────────────┘           └──────────────────────────────────┘
+```
+
+**Option A: SAP AI Core (generative AI hub)**: managed models on SAP BTP.
+
+```
+Browser → Approuter (XSUAA) → CAP service ──→ SAP AI Core: chat model + embedding model
+                                   └──────→ PostgreSQL on SAP BTP (pgvector, Capire ingested)
+```
+
+- New adapters for `LLMProvider` and `EmbeddingProvider`, e.g. with the SAP Cloud
+  SDK for AI; configuration selects them per profile.
+- A different embedding model means re-ingesting Capire
+  ([ADR 0005](docs/adr/0005-bge-m3-embeddings-and-reindexing.md)); the golden set
+  compares retrieval and answer quality with the local models.
+- Fully managed and always available. **Not part of the free trial**: SAP AI Core
+  is a paid service.
+
+**Option B: SAP Cloud Connector in front of the local Ollama**: hybrid set-up.
+
+```
+Browser → Approuter (XSUAA) → CAP service ──→ PostgreSQL on SAP BTP (pgvector)
+                                   │
+                                   └─→ Connectivity service ⇄ Cloud Connector ⇄ Ollama
+                                       (SAP BTP)       (outbound TLS tunnel from the local network)
+```
+
+- The Cloud Connector runs on the local host and opens an outbound, encrypted
+  tunnel to SAP BTP: no inbound port and no public exposure of Ollama.
+- The Ollama adapters call the model through the connectivity service proxy
+  instead of a direct URL; models, embeddings and data stay as they are.
+- Free (Cloud Connector, connectivity and PostgreSQL trial), and the standard SAP
+  pattern to connect cloud apps with on-premise systems. Answers are only
+  available while the local host is running.
+
+Both options add back the PostgreSQL service and the schema deployer module,
+which the build already prepares.
 
 ## Scripts
 

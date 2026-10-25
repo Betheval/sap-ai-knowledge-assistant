@@ -26,9 +26,9 @@ modules:
       health-check-type: http
       health-check-http-endpoint: /health
     properties:
-      # The model host is not reachable from SAP BTP until SAP AI Core (phase 5):
-      # answers come from the fake model and sample documents
-      CDS_ENV: production,btp-demo
+      # No model host is reachable from SAP BTP (ADR 0019): in-memory SQLite with sample
+      # conversations; every question answers that the language model is unavailable
+      CDS_ENV: production,btp-no-model
       NO_TELEMETRY: true
     build-parameters:
       builder: npm-ci
@@ -38,21 +38,6 @@ modules:
           srv-url: ${default-url}
     requires:
       - name: knowledge-auth
-      - name: knowledge-db
-
-  - name: knowledge-db-deployer
-    type: nodejs
-    path: gen/pg
-    parameters:
-      buildpack: nodejs_buildpack
-      memory: 256M
-      no-route: true
-      no-start: true
-      tasks:
-        - name: deploy-to-postgresql
-          command: npm start
-    requires:
-      - name: knowledge-db
 
   - name: knowledge-assistant
     type: approuter.nodejs
@@ -99,7 +84,3 @@ resources:
               - '$XSAPPNAME.KnowledgeUser'
     requires:
       - name: app-api
-
-  # Created beforehand: the vector extension must be enabled before the schema is deployed (ADR 0019)
-  - name: knowledge-db
-    type: org.cloudfoundry.existing-service

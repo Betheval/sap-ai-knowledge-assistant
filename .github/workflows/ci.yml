@@ -173,3 +173,48 @@ jobs:
           path: mta_archives/*.mtar
           if-no-files-found: error
           retention-days: 7
+
+  # Continuous deployment of the archive built above (ADR 0019). Enabled with the
+  # repository variable BTP_DEPLOY=true once the `btp` environment has credentials.
+  deploy:
+    name: Deploy to SAP BTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [mta, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.BTP_DEPLOY == 'true'
+    environment:
+      name: btp
+      url: ${{ vars.BTP_APP_URL }}
+    # Never run two deployments to the same space at once, never cancel a running one
+    concurrency:
+      group: deploy-btp
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: mta-archive-${{ github.sha }}
+          path: mta_archives
+
+      - name: Install the Cloud Foundry CLI and the MultiApps plugin
+        run: |
+          curl -sSfL "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8&source=github" | tar -xz cf8
+          sudo mv cf8 /usr/local/bin/cf
+          cf version
+          cf install-plugin multiapps -f
+
+      - name: Log in to Cloud Foundry
+        env:
+          CF_USERNAME: ${{ secrets.CF_USERNAME }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
+        run: |
+          cf api "${{ vars.CF_API }}"
+          cf auth
+          cf target -o "${{ vars.CF_ORG }}" -s "${{ vars.CF_SPACE }}"
+
+      - name: Deploy
+        run: cf deploy mta_archives/*.mtar -f --retries 1
+
+      - name: Show the deployed apps
+        if: always()
+        run: cf mta sap-ai-knowledge-assistant || true

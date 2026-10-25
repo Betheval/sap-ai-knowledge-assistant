@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@cap-js/postgres": "^3.1.2",
+    "@cap-js/sqlite": "^3.1.2",
     "@cap-js/telemetry": "^2.1.1",
     "@opentelemetry/api": "^1.9.1",
     "@sap/cds": "^10.1.1",
@@ -44,7 +45,6 @@
     "@cap-js/cds-test": "^1.0.2",
     "@cap-js/cds-typer": "^0.41.1",
     "@cap-js/cds-types": "^0.20.0",
-    "@cap-js/sqlite": "^3.1.2",
     "@eslint/js": "^10",
     "@sap/cds-dk": "^10.1.0",
     "@sap/eslint-plugin-cds": "^4.2.5",
@@ -151,12 +151,13 @@
           "kind": "basic"
         }
       },
-      "[btp-demo]": {
-        "llm": {
-          "kind": "fake-llm"
-        },
-        "retriever": {
-          "kind": "fake-retriever"
+      "[btp-no-model]": {
+        "db": {
+          "kind": "sqlite",
+          "credentials": {
+            "url": ":memory:",
+            "database": ":memory:"
+          }
         }
       },
       "[fake-ai]": {
@@ -213,6 +214,11 @@
     "[production]": {
       "log": {
         "format": "json"
+      }
+    },
+    "[btp-no-model]": {
+      "demo": {
+        "history": true
       }
     }
   }

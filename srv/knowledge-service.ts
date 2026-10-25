@@ -1,6 +1,7 @@
 import cds from '@sap/cds'
 import { ask } from '#cds-models/KnowledgeService'
 import { Conversations, Messages } from '#cds-models/knowledge'
+import { seedDemoHistory } from './lib/demo/demo-history'
 import { ProviderError } from './lib/errors'
 import { traced } from './lib/observability/tracing'
 import type { ChatMessage, LLMProvider } from './lib/ports/llm'
@@ -18,6 +19,13 @@ export default class KnowledgeService extends cds.ApplicationService {
     const { SELECT, INSERT } = cds.ql
     // Each pipeline step becomes a span below the request span of @cap-js/telemetry (ADR 0017)
     const stage: StageRunner = (name, fn) => traced(`rag.${name}`, () => fn())
+
+    // Deployments without a model host show sample conversations (ADR 0019)
+    if ((cds.env as { demo?: { history?: boolean } }).demo?.history) {
+      this.before('READ', ['Conversations', 'Messages', 'MessageSources'], async (req) => {
+        if (await seedDemoHistory(req.user.id)) LOG.info(`Created sample conversations for ${req.user.id}`)
+      })
+    }
 
     this.on(ask, async (req) => {
       const { conversationId } = req.data

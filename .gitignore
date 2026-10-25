@@ -27,3 +27,6 @@ docker.env
 mta_archives/
 .mta/
 *.mtar
+
+# Personal notes, not published
+docs/demo-guide.md
