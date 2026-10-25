@@ -1,0 +1,89 @@
+# Continuous integration (ADR 0016): static checks and every test, including the
+# PostgreSQL integration tests against a pgvector service container.
+# Retrieval evaluation (npm run eval:retrieval) needs the LLM host and stays manual.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint, type check and test (Node.js ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Credentials of the throwaway CI database; read by the integration tests
+      CDS_REQUIRES_DB_CREDENTIALS_HOST: localhost
+      CDS_REQUIRES_DB_CREDENTIALS_PORT: 5432
+      CDS_REQUIRES_DB_CREDENTIALS_PASSWORD: ci-app-password
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare the knowledge databases
+        run: psql -v ON_ERROR_STOP=1 -v app_password="$CDS_REQUIRES_DB_CREDENTIALS_PASSWORD" -f infra/postgres/setup.sql
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Type check (backend and UI)
+        run: npm run typecheck
+
+      - name: Test
+        run: npx jest --ci --json --outputFile=jest-results.json
+
+      # The integration tests skip themselves without a database; in CI that would hide a broken setup
+      - name: Make sure the PostgreSQL integration tests ran
+        run: |
+          node -e "
+            const results = require('./jest-results.json').testResults
+              .filter((file) => file.name.includes('/test/integration/'))
+              .flatMap((file) => file.assertionResults)
+            const passed = results.filter((t) => t.status === 'passed').length
+            console.log('integration tests passed:', passed, 'of', results.length)
+            if (passed === 0 || passed !== results.length) process.exit(1)
+          "

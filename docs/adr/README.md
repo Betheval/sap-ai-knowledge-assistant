@@ -20,3 +20,4 @@ New records start from [template.md](template.md).
 | 0013 | [Testing strategy and RAG golden set](0013-testing-strategy-and-golden-set.md)                               | Accepted |
 | 0014 | [Project conventions](0014-project-conventions.md)                                                           | Accepted |
 | 0015 | [SAPUI5 freestyle chat UI](0015-sapui5-freestyle-chat-ui.md)                                                 | Accepted |
+| 0016 | [Continuous integration with GitHub Actions](0016-continuous-integration.md)                                 | Accepted |

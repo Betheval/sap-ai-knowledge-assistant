@@ -1,5 +1,7 @@
 # SAP AI Knowledge Assistant
 
+[![CI](https://github.com/Betheval/sap-ai-knowledge-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/Betheval/sap-ai-knowledge-assistant/actions/workflows/ci.yml)
+
 A retrieval-augmented assistant that answers SAP Cloud Application Programming
 Model (CAP) development questions from the official CAP documentation, and shows
 the sources behind every answer.
